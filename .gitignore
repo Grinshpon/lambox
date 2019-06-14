@@ -1,0 +1,7 @@
+*.swp
+*.txt
+*.hi
+*.hp
+*.o
+dist-newstyle/*
+.ghc.*
