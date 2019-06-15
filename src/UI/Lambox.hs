@@ -10,6 +10,7 @@ module UI.Lambox
   , Title(..)
   , AlignV(..)
   , AlignH(..)
+  , Direction(..)
   , Event(..)
   , Curses
   , CursorMode(..)
@@ -138,6 +139,10 @@ newBox Config{..} = do
 deleteBox :: Box -> Curses ()
 deleteBox (Box win pan) = deletePanel pan >> closeWindow win
 
+{-
+deleteBoxes :: [Box] -> Curses ()
+deleteBoxes = foldMap deleteBox -}
+
 -- | Literally just a synonym for render
 update :: Curses ()
 update = refreshPanels >> render
@@ -158,3 +163,49 @@ writeStr (Box win pan) x y str = updateWindow win $ do
 -- | Like writeStr but with any showable type
 writeShow :: Show a => Box -> Integer -> Integer -> a -> Curses ()
 writeShow box x y = ((writeStr box x y) . show)
+
+-- | Take a box and split it into two boxes, returning the new
+-- box and altering the passed box as a side effect (CAUTION!)
+-- The direction determines where the new box is in relation
+-- to the passed box, and the fraction is the ratio of the
+-- length or width of the new box to the old
+splitBox :: RealFrac a => Box -> Direction -> a -> Borders -> Curses Box
+splitBox (Box win pan) dir ratio borders = do
+  (y,x,height,width) <- updateWindow win $ do
+    (y,x) <- windowPosition
+    (height,width) <- windowSize
+    pure (y,x,height,width)
+  case dir of
+    _ -> do -- DirUp
+      let nHeight2 = ratioIF height ratio
+          nHeight1 = height - nHeight2
+          nuY2 = y
+          nuY1 = y + nHeight2
+      updateWindow win $ do
+        resizeWindow nHeight1 width
+        moveWindow nuY1 x
+      let nConfig = Config x nuY2 width nHeight2 borders Nothing
+      newBox nConfig
+
+{-
+setBorders :: Box -> Borders -> Curses ()
+setBorders (Box conf@Congig{..} win pan) cBorders = updateWindow win $ do
+  case cBorders of
+      Line -> drawBox (Just glyphLineV) (Just glyphLineH)
+      Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
+      _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
+
+setTitle :: Box -> Maybe Title -> Curses ()
+setTitle (Box conf@Config{..} win pan) cTitle = updateWindow win $ do
+  case cTitle of
+      Nothing -> pure ()
+      Just (Title title vAlign hAlign) -> do
+        let vert = case vAlign of
+              AlignLeft -> 1
+              AlignCenter -> (configWidth `quot` 2) - ((toInteger $ length title) `quot` 2)
+              AlignRight -> (configWidth-1) - (toInteger $ length title)
+            horz = case hAlign of
+              AlignTop -> 0
+              AlignBot -> configHeight-1
+        moveCursor horz vert >> drawString title
+-}

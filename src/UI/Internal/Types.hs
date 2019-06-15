@@ -3,9 +3,11 @@ module UI.Internal.Types where
 import UI.NCurses
 import UI.NCurses.Panel
 
-data Box = Box Window Panel
+-- probably remove all Show instanes, they're not really needed
 
-data Border = Border
+data Box = Box Window Panel {- Contents -}
+
+data Border = Border --WIP
   { topLeft  :: Char
   , topRight :: Char
   , botLeft  :: Char
@@ -14,29 +16,37 @@ data Border = Border
   , right    :: Char
   , top      :: Char
   , bottom   :: Char
-  } deriving (Eq, Show)
+  } deriving (Eq)
 
 data Borders
   = Line
   | Hash
   | Dot
   | Plus
+  | None
   | Char Char
   | Custom Border
-  deriving (Eq, Show)
+  deriving (Eq)
 
 data AlignV
   = AlignLeft
   | AlignCenter
   | AlignRight
-  deriving (Eq, Show)
+  deriving (Eq)
 
 data AlignH
   = AlignTop
   | AlignBot
-  deriving (Eq, Show)
+  deriving (Eq)
 
-data Title = Title String AlignV AlignH deriving (Eq, Show)
+data Direction
+  = DirUp
+  | DirDown
+  | DirLeft
+  | DirRight
+  deriving (Eq)
+
+data Title = Title String AlignV AlignH deriving (Eq)
 
 data Config = Config --WIP
   { configX       :: Integer
@@ -46,7 +56,9 @@ data Config = Config --WIP
   , configBorders :: Borders
   , configTitle   :: Maybe Title
   --, contents  :: a
-  } deriving (Eq, Show)
+  } deriving (Eq)
 
-
+-- Does this belong in types?
+ratioIF :: RealFrac a => Integer -> a -> Integer
+ratioIF x y = x `quot` (floor $ 1/y)
 
