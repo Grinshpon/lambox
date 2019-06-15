@@ -1,8 +1,8 @@
 # LamBox
 
-### A Text User Interface Library for Haskell
+## A Text User Interface Library for Haskell
 
-LamBox uses the ncurses package to create a high level tool for creating tui's
+LamBox uses the ncurses package to create a high level tool for creating tui's.
 
 #### Steps
 
