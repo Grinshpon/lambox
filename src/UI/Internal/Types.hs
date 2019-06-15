@@ -1,9 +1,9 @@
 module UI.Internal.Types where
 
 import UI.NCurses
-import qualified UI.NCurses.Panel as P
+import UI.NCurses.Panel
 
-data Panel = Panel Window P.Panel
+data Box = Box Window Panel
 
 data Border = Border
   { topLeft  :: Char
@@ -16,15 +16,36 @@ data Border = Border
   , bottom   :: Char
   } deriving (Eq, Show)
 
-data Borders = Line | Hash | Dot | Plus | Char Char | Custom Border deriving (Eq, Show)
+data Borders
+  = Line
+  | Hash
+  | Dot
+  | Plus
+  | Char Char
+  | Custom Border
+  deriving (Eq, Show)
 
-data (Show a) => Box a = Box --WIP
-  { x         :: Integer
-  , y         :: Integer
-  , width     :: Integer
-  , height    :: Integer
-  , borders   :: Borders
-  , contents  :: a
+data AlignV
+  = AlignLeft
+  | AlignCenter
+  | AlignRight
+  deriving (Eq, Show)
+
+data AlignH
+  = AlignTop
+  | AlignBottom
+  deriving (Eq, Show)
+
+data Title = Title String AlignV AlignH deriving (Eq, Show)
+
+data Config = Config --WIP
+  { configX       :: Integer
+  , configY       :: Integer
+  , configWidth   :: Integer
+  , configHeight  :: Integer
+  , configBorders :: Borders
+  , configTitle   :: Maybe Title
+  --, contents  :: a
   } deriving (Eq, Show)
 
 

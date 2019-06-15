@@ -1,19 +1,14 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Main where
 
-import UI.Text
-
-testBox :: Box ()
-testBox = Box 10 10 10 10 Line ()
+import UI.Lambox
 
 main :: IO ()
-main = initTui $ do
-  p <- newPanel testBox
+main = lambox $ do
+  p <- newBox testBox
   update
   loop
-  deletePanel p
+  deleteBox p
   where
-    loop :: Curses ()
-    loop = do
-      onEventGlobal (/= EventCharacter 'q') loop
+    loop = onEventGlobal (/= EventCharacter 'q') loop
+    testTitle = Title "LamBox" AlignLeft AlignTop
+    testBox = Config 5 5 20 20 Line $ Just testTitle

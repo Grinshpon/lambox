@@ -6,7 +6,7 @@ let
 
   f = { mkDerivation, base, ncurses, stdenv }:
       mkDerivation {
-        pname = "tui";
+        pname = "lambox";
         version = "0.1.0.0";
         src = ./.;
         isLibrary = true;

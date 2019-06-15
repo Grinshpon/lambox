@@ -1,24 +1,29 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module UI.Text
+-- TODO Reorganize everything
+
+module UI.Lambox
   ( testRender --to be taken out
   , onEvent
   , onEvent'
   , onEventGlobal
   , waitFor
-  , newPanel
-  , deletePanel
-  , initTui
+  , newBox
+  , deleteBox
+  , lambox
   , update
+  , Config(..)
   , Box(..)
-  , Panel(..)
   , Borders(..)
+  , Title(..)
+  , AlignV(..)
+  , AlignH(..)
   , Event(..)
   , Curses
   ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc)
 
 import UI.NCurses
-import qualified UI.NCurses.Panel as P
+import UI.NCurses.Panel
 
 import UI.Internal.Types
 
@@ -51,24 +56,24 @@ testRender = runCurses $ do
     drawString "(press q to quit)"
     moveCursor 0 0
   nw <- newWindow 12 12 1 30
-  pan <- P.newPanel nw
+  pan <- newPanel nw
   updateWindow nw $ do
     moveCursor 1 1
     drawString "Panel here"
     drawBox (Just glyphLineV) (Just glyphLineH)
   render
   waitFor w (== EventCharacter 'd')
-  P.movePanel pan 10 30
-  P.refreshPanels
+  movePanel pan 10 30
+  refreshPanels
   render
   testRenderLoop w
-  P.deletePanel pan
+  deletePanel pan
   closeWindow nw
   closeWindow w
 
 testRenderWindow :: Window -> Curses ()
 testRenderWindow w = do
-  P.refreshPanels
+  refreshPanels
   updateWindow w $ do
     moveCursor 3 10
     dim <- windowSize
@@ -96,7 +101,7 @@ onEvent' (Just event) p action = if p event then action >> pure () else pure ()
 onEvent' Nothing _ _           = pure ()
 
 -- | Perform action if event passed meets the event condition, else do nothing
-onEvent :: Window {- replace with Panel -} -> (Event -> Bool) -> Curses a -> Curses ()
+onEvent :: Window {- replace with Box -} -> (Event -> Bool) -> Curses a -> Curses ()
 onEvent window p action = getEvent window Nothing >>= \event -> onEvent' event p action
 
 -- | Similar to onEvent but happens on any event within the default window
@@ -108,26 +113,33 @@ onEventGlobal p action = do
 -- | Create a panel given a Box type. Because the tui panel uses NCurses'
 -- Panel and Window type, it cannot be garbage collected and must be
 -- deleted manually with `deletePanel`
-newPanel :: Show a => Box a -> Curses Panel
-newPanel Box{..} = do
-  win <- newWindow height width y x
-  pan <- P.newPanel win
-  updateWindow win $ case borders of
-    Line -> drawBox (Just glyphLineV) (Just glyphLineH)
-    Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
-    _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
-  P.refreshPanels
-  pure $ Panel win pan
+newBox :: Config -> Curses Box
+newBox Config{..} = do
+  win <- newWindow configHeight configWidth configY configX
+  pan <- newPanel win
+  updateWindow win $ do
+    case configBorders of
+      Line -> drawBox (Just glyphLineV) (Just glyphLineH)
+      Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
+      _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
+    case configTitle of
+      Nothing -> pure ()
+      Just (Title title vert horz) -> moveCursor 0 1 >> drawString title --TODO: Complete (account for vert and horz alignment)
+  refreshPanels
+  pure $ Box win pan
 
--- updatePanel :: Panel -> Curses a -> Curses ()
+-- updateBox :: Box -> Curses a -> Curses ()
 
 -- | Delete panel
-deletePanel :: Panel -> Curses ()
-deletePanel (Panel win pan) = P.deletePanel pan >> closeWindow win
+deleteBox :: Box -> Curses ()
+deleteBox (Box win pan) = deletePanel pan >> closeWindow win
 
 -- | Literally just a synonym for render
 update :: Curses ()
-update = render
+update = refreshPanels >> render
 
-initTui :: Curses a -> IO a
-initTui f = runCurses (setEcho False >> f)
+lambox :: Curses a -> IO a
+lambox f = runCurses (setEcho False >> f)
+
+-- TODO :: default configs like full(screen), up half, down third, etc, using direction and ratio
+-- config :: Direction -> Ratio -> Config
