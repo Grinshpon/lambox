@@ -33,7 +33,7 @@ data AlignV
 
 data AlignH
   = AlignTop
-  | AlignBottom
+  | AlignBot
   deriving (Eq, Show)
 
 data Title = Title String AlignV AlignH deriving (Eq, Show)

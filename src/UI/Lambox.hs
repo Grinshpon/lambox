@@ -3,23 +3,17 @@
 -- TODO Reorganize everything
 
 module UI.Lambox
-  ( testRender --to be taken out
-  , onEvent
-  , onEvent'
-  , onEventGlobal
-  , waitFor
-  , newBox
-  , deleteBox
-  , lambox
-  , update
+  ( module UI.Lambox
   , Config(..)
-  , Box(..)
+  --, Box(..)
   , Borders(..)
   , Title(..)
   , AlignV(..)
   , AlignH(..)
   , Event(..)
   , Curses
+  , CursorMode(..)
+  , setCursorMode
   ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc)
 
 import UI.NCurses
@@ -41,6 +35,7 @@ import UI.Internal.Types
 -- |- tabs
 -- Updaters
 
+{-
 -- | A test render
 testRender :: IO ()
 testRender = runCurses $ do
@@ -85,6 +80,7 @@ testRenderLoop :: Window -> Curses ()
 testRenderLoop w = do
   testRenderWindow w
   onEvent w (\ev -> ev /= EventCharacter 'q' && ev /= EventCharacter 'Q') (testRenderLoop w)
+-}
 
 -- | Wait for condition to be met before continuing
 waitFor :: Window -> (Event -> Bool) -> Curses ()
@@ -124,7 +120,15 @@ newBox Config{..} = do
       _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
     case configTitle of
       Nothing -> pure ()
-      Just (Title title vert horz) -> moveCursor 0 1 >> drawString title --TODO: Complete (account for vert and horz alignment)
+      Just (Title title vAlign hAlign) -> do
+        let vert = case vAlign of
+              AlignLeft -> 1
+              AlignCenter -> (configWidth `quot` 2) - ((toInteger $ length title) `quot` 2)
+              AlignRight -> (configWidth-1) - (toInteger $ length title)
+            horz = case hAlign of
+              AlignTop -> 0
+              AlignBot -> configHeight-1
+        moveCursor horz vert >> drawString title
   refreshPanels
   pure $ Box win pan
 
@@ -138,8 +142,19 @@ deleteBox (Box win pan) = deletePanel pan >> closeWindow win
 update :: Curses ()
 update = refreshPanels >> render
 
+-- | Start the program
 lambox :: Curses a -> IO a
 lambox f = runCurses (setEcho False >> f)
 
 -- TODO :: default configs like full(screen), up half, down third, etc, using direction and ratio
 -- config :: Direction -> Ratio -> Config
+
+-- | Take a box and a pair of local coordinates and print a string within it
+writeStr :: Box -> Integer -> Integer -> String -> Curses ()
+writeStr (Box win pan) x y str = updateWindow win $ do
+  moveCursor y x
+  drawString str
+
+-- | Like writeStr but with any showable type
+writeShow :: Show a => Box -> Integer -> Integer -> a -> Curses ()
+writeShow box x y = ((writeStr box x y) . show)
