@@ -23,9 +23,9 @@ import UI.Internal.Types
 
 --TODO:
 -- Boxes/Panels
--- |- borders (dash '-' '|' or hash '#' or dot '*' ******** and thickness ======= or plus '+' (or other char)
--- |- gaps                                         *      *               ||   ||
--- |- dimension                                    ********               =======
+-- |- borders (dash '-' '|' or hash '#' or dot '*' ******** or plus '+' (or other char)
+-- |- gaps                                         *      * 
+-- |- dimension                                    ********
 -- |- ordering
 -- |- position
 -- Widgets
