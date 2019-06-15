@@ -11,6 +11,6 @@ main = lambox $ do
   loop
   deleteBox p
   where
-    loop = onEventGlobal (/= EventCharacter 'q') loop
+    loop = onEventGlobal (/= EventCharacter 'q') (update >> loop)
     testTitle = Title "LamBox" AlignRight AlignTop
     testBox = Config 5 5 22 5 Line $ Just testTitle
