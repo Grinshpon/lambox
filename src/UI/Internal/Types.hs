@@ -5,7 +5,7 @@ import UI.NCurses.Panel
 
 -- probably remove all Show instanes, they're not really needed
 
-data Box = Box Window Panel {- Contents -}
+data Box = Box Config Window Panel {- Contents -}
 
 data Border = Border --WIP
   { topLeft  :: Char
@@ -16,7 +16,7 @@ data Border = Border --WIP
   , right    :: Char
   , top      :: Char
   , bottom   :: Char
-  } deriving (Eq)
+  } deriving (Eq,Ord)
 
 data Borders
   = Line
@@ -26,18 +26,18 @@ data Borders
   | None
   | Char Char
   | Custom Border
-  deriving (Eq)
+  deriving (Eq,Ord)
 
 data AlignV
   = AlignLeft
   | AlignCenter
   | AlignRight
-  deriving (Eq)
+  deriving (Eq,Ord)
 
 data AlignH
   = AlignTop
   | AlignBot
-  deriving (Eq)
+  deriving (Eq,Ord)
 
 data Direction
   = DirUp
@@ -46,16 +46,19 @@ data Direction
   | DirRight
   deriving (Eq)
 
-data Title = Title String AlignV AlignH deriving (Eq)
+data BoxAttribute
+  = Borders Borders
+  | Title String AlignH AlignV
+  deriving (Eq,Ord)
+
+-- data Title = Title String AlignV AlignH deriving (Eq)
 
 data Config = Config --WIP
   { configX       :: Integer
   , configY       :: Integer
   , configWidth   :: Integer
   , configHeight  :: Integer
-  , configBorders :: Borders
-  , configTitle   :: Maybe Title
-  --, contents  :: a
+  , configAttrs   :: [BoxAttribute]
   } deriving (Eq)
 
 -- Does this belong in types?

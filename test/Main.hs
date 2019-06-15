@@ -4,16 +4,15 @@ import UI.Lambox
 
 main :: IO ()
 main = lambox $ do
-  setCursorMode CursorInvisible
-  box1 <- newBox testBox
-  writeStr box1 2 2 "Press 'q' to quit!"
-  box2 <- splitBox box1 DirUp 0.5 Line
+  bigBox <- newBox testBox
+  writeStr bigBox 2 2 "Press 'q' to quit!"
+  (box1,box2) <- splitBox bigBox DirUp 0.5 [Borders Line]
   writeStr box2 2 2 "Hello World!"
   update
-  loop
+  go
   deleteBox box1
   deleteBox box2
   where
-    loop = onEventGlobal (/= EventCharacter 'q') (update >> loop)
-    testTitle = Title "LamBox" AlignRight AlignTop
-    testBox = Config 2 2 22 10 Line $ Just testTitle
+    go = onEventGlobal (/= EventCharacter 'q') (update >> go)
+    testTitle = Title "LamBox" AlignTop AlignRight
+    testBox = Config 2 2 22 10 [Borders Line,testTitle]

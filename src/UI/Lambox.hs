@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- TODO Reorganize everything
 
@@ -7,7 +8,7 @@ module UI.Lambox
   , Config(..)
   --, Box(..)
   , Borders(..)
-  , Title(..)
+  , BoxAttribute(..)
   , AlignV(..)
   , AlignH(..)
   , Direction(..)
@@ -16,6 +17,8 @@ module UI.Lambox
   , CursorMode(..)
   , setCursorMode
   ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc)
+
+import Data.List (sort)
 
 import UI.NCurses
 import UI.NCurses.Panel
@@ -111,17 +114,25 @@ onEventGlobal p action = do
 -- Panel and Window type, it cannot be garbage collected and must be
 -- deleted manually with `deletePanel`
 newBox :: Config -> Curses Box
-newBox Config{..} = do
+newBox conf@Config{..} = do
   win <- newWindow configHeight configWidth configY configX
   pan <- newPanel win
   updateWindow win $ do
-    case configBorders of
-      Line -> drawBox (Just glyphLineV) (Just glyphLineH)
-      Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
-      _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
-    case configTitle of
-      Nothing -> pure ()
-      Just (Title title vAlign hAlign) -> do
+    configureAttrs $ sort configAttrs
+  refreshPanels
+  pure $ Box conf win pan
+  where
+    configureAttrs :: [BoxAttribute] -> Update () --ASSUMES LIST IS SORTED
+    configureAttrs [] = pure ()
+    configureAttrs (a:as) = configAttribute a >> configureAttrs as
+    
+    configAttribute :: BoxAttribute -> Update ()
+    configAttribute = \case
+      (Borders border) -> case border of
+        Line -> drawBox (Just glyphLineV) (Just glyphLineH)
+        Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
+        _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
+      (Title title hAlign vAlign) -> do
         let vert = case vAlign of
               AlignLeft -> 1
               AlignCenter -> (configWidth `quot` 2) - ((toInteger $ length title) `quot` 2)
@@ -130,14 +141,17 @@ newBox Config{..} = do
               AlignTop -> 0
               AlignBot -> configHeight-1
         moveCursor horz vert >> drawString title
-  refreshPanels
-  pure $ Box win pan
+      _ -> pure ()
+
+
+
 
 -- updateBox :: Box -> Curses a -> Curses ()
 
+
 -- | Delete panel
 deleteBox :: Box -> Curses ()
-deleteBox (Box win pan) = deletePanel pan >> closeWindow win
+deleteBox (Box _ win pan) = deletePanel pan >> closeWindow win
 
 {-
 deleteBoxes :: [Box] -> Curses ()
@@ -149,14 +163,14 @@ update = refreshPanels >> render
 
 -- | Start the program
 lambox :: Curses a -> IO a
-lambox f = runCurses (setEcho False >> f)
+lambox f = runCurses (setEcho False >> setCursorMode CursorInvisible >> f)
 
 -- TODO :: default configs like full(screen), up half, down third, etc, using direction and ratio
 -- config :: Direction -> Ratio -> Config
 
 -- | Take a box and a pair of local coordinates and print a string within it
 writeStr :: Box -> Integer -> Integer -> String -> Curses ()
-writeStr (Box win pan) x y str = updateWindow win $ do
+writeStr (Box conf win pan) x y str = updateWindow win $ do
   moveCursor y x
   drawString str
 
@@ -169,33 +183,37 @@ writeShow box x y = ((writeStr box x y) . show)
 -- The direction determines where the new box is in relation
 -- to the passed box, and the fraction is the ratio of the
 -- length or width of the new box to the old
-splitBox :: RealFrac a => Box -> Direction -> a -> Borders -> Curses Box
-splitBox (Box win pan) dir ratio borders = do
-  (y,x,height,width) <- updateWindow win $ do
+splitBox :: RealFrac a => Box -> Direction -> a -> [BoxAttribute] -> Curses (Box, Box) -- return Curses (Box, Box) (oldbox, newbox) with updated config settings
+splitBox (Box Config{..} win pan) dir ratio attrs = do
+  case dir of
+    _ -> do -- DirUp
+      let nHeight2 = ratioIF configHeight ratio
+          nHeight1 = configHeight - nHeight2
+          nuY2 = configY
+          nuY1 = configY + nHeight2
+      updateWindow win $ do
+        resizeWindow nHeight1 configWidth
+        moveWindow nuY1 configX
+      let nConfig = Config configX nuY2 configWidth nHeight2 attrs
+      box2 <- newBox nConfig
+      let nbox1 = Box (Config configX nuY1 configWidth nHeight1 configAttrs) win pan
+      pure (nbox1,box2)
+{-
+(y,x,height,width) <- updateWindow win $ do --use config instead
     (y,x) <- windowPosition
     (height,width) <- windowSize
     pure (y,x,height,width)
-  case dir of
-    _ -> do -- DirUp
-      let nHeight2 = ratioIF height ratio
-          nHeight1 = height - nHeight2
-          nuY2 = y
-          nuY1 = y + nHeight2
-      updateWindow win $ do
-        resizeWindow nHeight1 width
-        moveWindow nuY1 x
-      let nConfig = Config x nuY2 width nHeight2 borders Nothing
-      newBox nConfig
+-}
 
 {-
-setBorders :: Box -> Borders -> Curses ()
+setBorders :: Box -> Borders -> Update ()
 setBorders (Box conf@Congig{..} win pan) cBorders = updateWindow win $ do
   case cBorders of
       Line -> drawBox (Just glyphLineV) (Just glyphLineH)
       Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
       _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
 
-setTitle :: Box -> Maybe Title -> Curses ()
+setTitle :: Box -> Maybe Title -> Update ()
 setTitle (Box conf@Config{..} win pan) cTitle = updateWindow win $ do
   case cTitle of
       Nothing -> pure ()
