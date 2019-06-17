@@ -12,6 +12,7 @@ module UI.Lambox
   , AlignV(..)
   , AlignH(..)
   , Direction(..)
+  , Axis(..)
   , Event(..)
   , Curses
   , CursorMode(..)
@@ -182,9 +183,11 @@ writeShow box x y = ((writeStr box x y) . show)
 -- box and altering the passed box as a side effect (CAUTION!)
 -- The direction determines where the new box is in relation
 -- to the passed box, and the fraction is the ratio of the
--- length or width of the new box to the old
-splitBox :: RealFrac a => Box -> Direction -> a -> [BoxAttribute] -> Curses (Box, Box) -- return Curses (Box, Box) (oldbox, newbox) with updated config settings
-splitBox (Box Config{..} win pan) dir ratio attrs = do
+-- length or width of the new box to the old.
+-- Because this function basically reintroduces more manual
+-- memory management, it is not something that should be used.
+unsafeSplitBox :: RealFrac a => Box -> Direction -> a -> [BoxAttribute] -> Curses (Box, Box) -- return Curses (Box, Box) (oldbox, newbox) with updated config settings
+unsafeSplitBox (Box Config{..} win pan) dir ratio attrs = do
   case dir of
     _ -> do -- DirUp
       let nHeight2 = ratioIF configHeight ratio
@@ -192,12 +195,64 @@ splitBox (Box Config{..} win pan) dir ratio attrs = do
           nuY2 = configY
           nuY1 = configY + nHeight2
       updateWindow win $ do
-        resizeWindow nHeight1 configWidth
+        resizeWindow nHeight1 configWidth -- have to redraw borders and title, to fix that bottom border bug
         moveWindow nuY1 configX
       let nConfig = Config configX nuY2 configWidth nHeight2 attrs
       box2 <- newBox nConfig
       let nbox1 = Box (Config configX nuY1 configWidth nHeight1 configAttrs) win pan
       pure (nbox1,box2)
+
+-- | Take a config for an area then given the axis and a decimal,
+-- split the area into two boxes. The decimal is that ratio between
+-- the respective dimensions of the first box and second box.
+splitBox :: RealFrac a => Config -> Axis -> a -> Curses (Box,Box)
+splitBox Config{..} axis ratio = splitBox' configX configY configWidth configHeight configAttrs configAttrs axis ratio
+
+
+-- | Take x and y coordinates, dimensions, axis, ratio, and
+-- two attribute lists to split the area into two boxes, configuring
+-- each box to the respective attributes (top/left takes first one)
+splitBox' :: RealFrac a => Integer -> Integer -> Integer -> Integer -> [BoxAttribute] -> [BoxAttribute] -> Axis -> a -> Curses (Box,Box)
+splitBox' x y width height attrs1 attrs2 axis ratio = do
+  (conf1, conf2) <- case axis of
+    Horizontal -> do
+      let width1 = ratioIF width ratio
+          width2 = width - width1
+          x1 = x
+          x2 = x + width1
+      pure
+        ( Config x1 y width1 height attrs1
+        , Config x2 y width2 height attrs2
+        )
+    Vertical -> do
+      let height1 = ratioIF height ratio
+          height2 = height - height1
+          y1 = y
+          y2 = y + height1
+      pure
+        ( Config x y1 width height1 attrs1
+        , Config x y2 width height2 attrs2
+        )
+  box1 <- newBox conf1
+  box2 <- newBox conf2
+  pure (box1,box2)
+
+
+      {-
+      protobox <- newBox (Config x y width height attrs1)
+      unsafeSplitBox protobox DirDown ratio attrs2
+      -- newBox (Config x y width height attrs1) >>= \protobox -> unsafeSplitBox protobox DirDown ratio attrs2
+      -}
+      {-
+      let height1 = ratioIF height ratio
+          height2 = height - height1
+          y1 = y
+          y2 = y + height1
+      box1 <- newBox $ Config x y1 width height1 attrs1
+      box2 <- newBox $ Config x y2 width height2 attrs2
+      pure (box1,box2)
+      -}
+
 {-
 (y,x,height,width) <- updateWindow win $ do --use config instead
     (y,x) <- windowPosition
@@ -206,15 +261,17 @@ splitBox (Box Config{..} win pan) dir ratio attrs = do
 -}
 
 {-
-setBorders :: Box -> Borders -> Update ()
-setBorders (Box conf@Congig{..} win pan) cBorders = updateWindow win $ do
+setBorders :: Box -> Borders -> Curses Box
+setBorders (Box Congig{..} win pan) cBorders = updateWindow win $ do
   case cBorders of
       Line -> drawBox (Just glyphLineV) (Just glyphLineH)
       Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
       _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
 
-setTitle :: Box -> Maybe Title -> Update ()
-setTitle (Box conf@Config{..} win pan) cTitle = updateWindow win $ do
+setTitle :: Box -> Maybe Title -> Curses Box
+setTitle box@(Box Config{..} win pan) cTitle = do
+  setBorders box configBorders
+  updateWindow win $ do
   case cTitle of
       Nothing -> pure ()
       Just (Title title vAlign hAlign) -> do
@@ -226,4 +283,6 @@ setTitle (Box conf@Config{..} win pan) cTitle = updateWindow win $ do
               AlignTop -> 0
               AlignBot -> configHeight-1
         moveCursor horz vert >> drawString title
+  where
+    configBorders = -- ...get borders from configAttrs
 -}

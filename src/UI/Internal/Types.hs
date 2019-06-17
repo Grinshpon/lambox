@@ -46,10 +46,15 @@ data Direction
   | DirRight
   deriving (Eq)
 
+data Axis
+  = Vertical
+  | Horizontal
+  deriving (Eq)
+
 data BoxAttribute
   = Borders Borders
   | Title String AlignH AlignV
-  deriving (Eq,Ord)
+  deriving (Eq,Ord) -- todo: background color, border color, text color, global text styling
 
 -- data Title = Title String AlignV AlignH deriving (Eq)
 
