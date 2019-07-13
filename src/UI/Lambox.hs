@@ -43,12 +43,7 @@ import UI.Lambox.Internal.Util
 
 -- | Wait for condition to be met before continuing
 waitFor :: Window -> (Event -> Bool) -> Curses ()
-waitFor window p = go where
-  go = do
-    event <- getEvent window Nothing
-    case event of
-      Nothing -> go
-      Just ev -> if p ev then pure () else go
+waitFor w p = onEvent w p (const $ return ())
 
 -- | Similar to onEvent, but does not \'consume\' event
 onEvent' :: Maybe Event -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
