@@ -38,5 +38,6 @@ executable test
   build-depends:
       base ^>=4.12.0.0
     , lambox
+    , ncurses
   hs-source-dirs:      test
   default-language:    Haskell2010

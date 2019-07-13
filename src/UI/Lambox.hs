@@ -14,10 +14,10 @@ module UI.Lambox
   , Title(..)
   , Direction(..)
   , Axis(..)
-  , Event(..) -- from ncurses
-  , Curses -- from ncurses
-  , CursorMode(..) --maybe don't re-export ncurses stuff?
-  , setCursorMode
+--  , Event(..) -- from ncurses
+--  , Curses -- from ncurses
+--  , CursorMode(..) --maybe don't re-export ncurses stuff?
+--  , setCursorMode -- from ncurses
   ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc) (???)
 
 import Data.List (sort)
