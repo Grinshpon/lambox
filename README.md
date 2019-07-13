@@ -30,5 +30,5 @@ eliminate a lot of the boilerplate required to get ncurses up and running.
       deleteBoxes [box1, box2]
       where
         go = onEventGlobal (/= EventCharacter 'q') (\_ -> update *> go)
-        title = Title "LamBox" AlignRight AlignTop
+        title = Title "LamBox" AlignTop AlignRight
         config = Config 2 2 22 10 (BoxAttributes Line Nothing)

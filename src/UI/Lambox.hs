@@ -201,7 +201,7 @@ updateBox (Box Config{..} _ _) = do
     _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
   case attrTitle configAttrs of
     Nothing -> pure ()
-    Just (Title title vAlign hAlign) -> do
+    Just (Title title hAlign vAlign) -> do
       let vert = case vAlign of
             AlignLeft -> 1
             AlignCenter -> (configWidth `quot` 2) - ((toInteger $ length title) `quot` 2)

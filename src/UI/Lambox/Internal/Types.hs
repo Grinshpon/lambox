@@ -30,7 +30,7 @@ data Borders
   | Custom Border
   deriving (Eq)
 
-data Title = Title String AlignV AlignH deriving (Eq)
+data Title = Title String AlignH AlignV deriving (Eq)
 
 data AlignV
   = AlignLeft
