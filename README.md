@@ -1,5 +1,7 @@
 # LamBox
 
+![Lambox Logo](media/lambox.png)
+
 ## A Text User Interface Library for Haskell
 
 ***This project is a work-in-progress and is not fully operational yet***
