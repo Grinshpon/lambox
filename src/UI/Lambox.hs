@@ -45,20 +45,29 @@ import UI.Lambox.Internal.Util
 waitFor :: Window -> (Event -> Bool) -> Curses ()
 waitFor w p = onEvent w p (const $ return ())
 
--- | Similar to onEvent, but does not \'consume\' event
+-- | Similar to onEvent, but does is passed the event
 onEvent' :: Maybe Event -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
 onEvent' (Just event) p action = if p event then action event *> pure () else pure ()
 onEvent' Nothing _ _           = pure ()
 
--- | Perform action if event passed meets the event condition, else do nothing
-onEvent :: Window {- replace with Box -} -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
+-- | Perform action if event passed within window meets the event condition, else do nothing
+onEvent :: Window -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
 onEvent window p action = getEvent window Nothing >>= \event -> onEvent' event p action
+
+-- | Perform action if event passed within box meets the event condition, else do nothing
+onEventBox :: Box -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
+onEventBox (Box _ win _) p action = getEvent win Nothing >>= \event -> onEvent' event p action
 
 -- | Similar to onEvent but happens on any event within the default window
 onEventGlobal :: (Event -> Bool) -> (Event -> Curses a) -> Curses ()
 onEventGlobal p action = do
   def <- defaultWindow
   getEvent def Nothing >>= \event -> onEvent' event p action
+
+-- | If you want to use one of the onEvent's regardless of the event predicate,
+-- simply pass in `true`.
+true :: a -> Bool
+true  _ = True
 
 -- | Create a panel given a Box type. Because the tui panel uses NCurses'
 -- Panel and Window type, it cannot be garbage collected and must be
@@ -198,14 +207,14 @@ setBorders (Box Config{..} win pan) mBorders = do
       None -> drawBox Nothing Nothing
       Line -> drawBox (Just glyphLineV) (Just glyphLineH)
       Hash -> drawBorder
-        (Just glyphStipple)
-        (Just glyphStipple)
-        (Just glyphStipple)
-        (Just glyphStipple)
-        (Just glyphStipple)
-        (Just glyphStipple)
-        (Just glyphStipple)
-        (Just glyphStipple)
+        (Just $ Glyph '#' [])
+        (Just $ Glyph '#' [])
+        (Just $ Glyph '#' [])
+        (Just $ Glyph '#' [])
+        (Just $ Glyph '#' [])
+        (Just $ Glyph '#' [])
+        (Just $ Glyph '#' [])
+        (Just $ Glyph '#' [])
       _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
   pure (Box (Config configX configY configWidth configHeight newAttrs) win pan)
   where
