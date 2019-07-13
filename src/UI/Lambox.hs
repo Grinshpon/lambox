@@ -209,4 +209,4 @@ updateBox (Box Config{..} _ _) = do
           horz = case hAlign of
             AlignTop -> 0
             AlignBot -> configHeight-1
-      moveCursor horz vert >> drawString title
+      moveCursor horz vert *> drawString title

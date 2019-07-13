@@ -16,6 +16,6 @@ main = lambox $ do
   deleteBox box1
   deleteBox box2
   where
-    go = onEventGlobal (/= EventCharacter 'q') (\_ -> update >> go)
+    go = onEventGlobal (/= EventCharacter 'q') (\_ -> update *> go)
     title = Title "LamBox" AlignRight AlignTop
     config = Config 2 2 22 10 (BoxAttributes Line Nothing)
