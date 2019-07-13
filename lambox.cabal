@@ -22,7 +22,8 @@ library
   exposed-modules:
     UI.Lambox
   other-modules:
-    UI.Internal.Types
+    UI.Lambox.Internal.Types
+    UI.Lambox.Internal.Util
   -- other-extensions:
   build-depends:
       base ^>=4.12.0.0

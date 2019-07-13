@@ -13,23 +13,24 @@ module UI.Lambox
   , AlignH(..)
   , Direction(..)
   , Axis(..)
-  , Event(..)
-  , Curses
-  , CursorMode(..)
+  , Event(..) -- from ncurses
+  , Curses -- from ncurses
+  , CursorMode(..) --maybe don't re-export ncurses stuff?
   , setCursorMode
-  ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc)
+  ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc) (???)
 
 import Data.List (sort)
 
 import UI.NCurses
 import UI.NCurses.Panel
 
-import UI.Internal.Types
+import UI.Lambox.Internal.Types
+import UI.Lambox.Internal.Util
 
 --TODO:
 -- Boxes/Panels
 -- |- borders (dash '-' '|' or hash '#' or dot '*' ******** or plus '+' (or other char)
--- |- gaps                                         *      * 
+-- |- gaps                                         *      *
 -- |- dimension                                    ********
 -- |- ordering
 -- |- position
@@ -39,53 +40,6 @@ import UI.Internal.Types
 -- |- check/radial boxes
 -- |- tabs
 -- Updaters
-
-{-
--- | A test render
-testRender :: IO ()
-testRender = runCurses $ do
-  setEcho False
-  w <- defaultWindow
-  updateWindow w $ do
-    moveCursor 1 10
-    drawString "Hello world!"
-    moveCursor 3 10
-    dim <- windowSize
-    drawString $ show dim
-    moveCursor 5 10
-    drawString "(press q to quit)"
-    moveCursor 0 0
-  nw <- newWindow 12 12 1 30
-  pan <- newPanel nw
-  updateWindow nw $ do
-    moveCursor 1 1
-    drawString "Panel here"
-    drawBox (Just glyphLineV) (Just glyphLineH)
-  render
-  waitFor w (== EventCharacter 'd')
-  movePanel pan 10 30
-  refreshPanels
-  render
-  testRenderLoop w
-  deletePanel pan
-  closeWindow nw
-  closeWindow w
-
-testRenderWindow :: Window -> Curses ()
-testRenderWindow w = do
-  refreshPanels
-  updateWindow w $ do
-    moveCursor 3 10
-    dim <- windowSize
-    drawString $ show dim
-    moveCursor 0 0
-  render
-
-testRenderLoop :: Window -> Curses ()
-testRenderLoop w = do
-  testRenderWindow w
-  onEvent w (\ev -> ev /= EventCharacter 'q' && ev /= EventCharacter 'Q') (testRenderLoop w)
--}
 
 -- | Wait for condition to be met before continuing
 waitFor :: Window -> (Event -> Bool) -> Curses ()
@@ -118,7 +72,7 @@ newBox :: Config -> Curses Box
 newBox conf@Config{..} = do
   win <- newWindow configHeight configWidth configY configX
   pan <- newPanel win
-  updateWindow win $ do
+  updateWindow win $ do -- Will be replaced with configBox, setTitle/setBorders
     configureAttrs $ sort configAttrs
   refreshPanels
   pure $ Box conf win pan
@@ -126,7 +80,7 @@ newBox conf@Config{..} = do
     configureAttrs :: [BoxAttribute] -> Update () --ASSUMES LIST IS SORTED
     configureAttrs [] = pure ()
     configureAttrs (a:as) = configAttribute a >> configureAttrs as
-    
+
     configAttribute :: BoxAttribute -> Update ()
     configAttribute = \case
       (Borders border) -> case border of
@@ -147,8 +101,8 @@ newBox conf@Config{..} = do
 
 
 
--- updateBox :: Box -> Curses a -> Curses ()
-
+-- setBox :: Box -> Curses a -> Curses ()
+-- configBox :: Box -> Config -> Curses Box
 
 -- | Delete panel
 deleteBox :: Box -> Curses ()
@@ -260,21 +214,48 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
     pure (y,x,height,width)
 -}
 
-{-
-setBorders :: Box -> Borders -> Curses Box
-setBorders (Box Congig{..} win pan) cBorders = updateWindow win $ do
-  case cBorders of
-      Line -> drawBox (Just glyphLineV) (Just glyphLineH)
-      Hash -> drawBorder (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple) (Just glyphStipple)
-      _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
+{- -- HAVE TO COMBINE TO setAttrs BECAUSE BORDERS AND TITLES ARE BOTH BoxAttribute TYPE
+-}
+setBoxAttributes :: Box -> [BoxAttribute] -> Curses Box
+setBoxAttributes box = \case
+  []                            -> pure box
+  (Borders nuBorder):nuAttrs    -> setBorders box nuBorder >>= flip setBoxAttributes nuAttrs
+  (title@(Title _ _ _)):nuAttrs -> setTitle box (Just title) >>= flip setBoxAttributes nuAttrs
+  -- use configAttr from newBox
 
-setTitle :: Box -> Maybe Title -> Curses Box
-setTitle box@(Box Config{..} win pan) cTitle = do
+setBorders :: Box -> Borders -> Curses Box
+setBorders (Box Config{..} win pan) mBorders = do
+  updateWindow win $ do
+    case mBorders of
+      None -> drawBox Nothing Nothing
+      Line -> drawBox (Just glyphLineV) (Just glyphLineH)
+      Hash -> drawBorder
+        (Just glyphStipple)
+        (Just glyphStipple)
+        (Just glyphStipple)
+        (Just glyphStipple)
+        (Just glyphStipple)
+        (Just glyphStipple)
+        (Just glyphStipple)
+        (Just glyphStipple)
+      _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
+  pure (Box (Config configX configY configWidth configHeight newAttrs) win pan)
+  where
+    replace :: [BoxAttribute] -> [BoxAttribute] -> [BoxAttribute]
+    replace s [] = s
+    replace s ((Borders _):xs) = s <> xs
+    replace s (x:xs) = replace (s <> [x]) xs
+    newAttrs = case mBorders of
+      None -> replace [] $ sort configAttrs
+      cBorders -> (Borders cBorders):(replace [] $ sort configAttrs)
+
+setTitle :: Box -> Maybe BoxAttribute -> Curses Box
+setTitle box@(Box Config{..} win pan) mTitle = do
   setBorders box configBorders
   updateWindow win $ do
-  case cTitle of
+    case mTitle of
       Nothing -> pure ()
-      Just (Title title vAlign hAlign) -> do
+      Just (Title title hAlign vAlign) -> do
         let vert = case vAlign of
               AlignLeft -> 1
               AlignCenter -> (configWidth `quot` 2) - ((toInteger $ length title) `quot` 2)
@@ -283,6 +264,19 @@ setTitle box@(Box Config{..} win pan) cTitle = do
               AlignTop -> 0
               AlignBot -> configHeight-1
         moveCursor horz vert >> drawString title
+  pure (Box (Config configX configY configWidth configHeight newAttrs) win pan)
   where
-    configBorders = -- ...get borders from configAttrs
--}
+    findBorder :: [BoxAttribute] -> Borders
+    findBorder [] = None
+    findBorder (x:xs) = case x of
+      (Borders borders) -> borders
+      _ -> findBorder xs
+    configBorders = findBorder $ sort configAttrs
+    replace :: [BoxAttribute] -> [BoxAttribute] -> [BoxAttribute]
+    replace s [] = s
+    replace s ((Title _ _ _):xs) = s <> xs
+    replace s (x:xs) = replace (s <> [x]) xs
+    newAttrs = case mTitle of
+      Nothing -> replace [] configAttrs
+      (Just title) -> (replace [] configAttrs) <> [title]
+

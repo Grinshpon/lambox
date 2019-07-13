@@ -1,4 +1,6 @@
-module UI.Internal.Types where
+module UI.Lambox.Internal.Types where
+
+import UI.Lambox.Internal.Util
 
 import UI.NCurses
 import UI.NCurses.Panel
@@ -51,6 +53,9 @@ data Axis
   | Horizontal
   deriving (Eq)
 
+
+-- | Ord instance is there because there is an order to drawing attributes
+-- so that they do not draw over each other.
 data BoxAttribute
   = Borders Borders
   | Title String AlignH AlignV
@@ -65,8 +70,3 @@ data Config = Config --WIP
   , configHeight  :: Integer
   , configAttrs   :: [BoxAttribute]
   } deriving (Eq)
-
--- Does this belong in types?
-ratioIF :: RealFrac a => Integer -> a -> Integer
-ratioIF x y = x `quot` (floor $ 1/y)
-

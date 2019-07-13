@@ -4,7 +4,10 @@ import UI.Lambox
 
 main :: IO ()
 main = lambox $ do
-  (box1,box2) <- splitBox testBox Vertical 0.5
+  (box1,box2) <- do
+    (b1,b2) <- splitBox config Vertical 0.5
+    nb1 <- setBoxAttributes b1 [title]
+    pure (nb1, b2)
   writeStr box1 2 2 "Hello World!"
   writeStr box2 2 2 "Press 'q' to quit!"
   update
@@ -13,5 +16,5 @@ main = lambox $ do
   deleteBox box2
   where
     go = onEventGlobal (/= EventCharacter 'q') (update >> go)
-    testTitle = Title "LamBox" AlignTop AlignRight
-    testBox = Config 2 2 22 10 [Borders Line,testTitle]
+    title = Title "LamBox" AlignTop AlignRight
+    config = Config 2 2 22 10 [Borders Line]
