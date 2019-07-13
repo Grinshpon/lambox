@@ -24,7 +24,7 @@ To Build:
 
     module Main where
 
-    import UI.NCurses
+    import UI.NCurses (Event(..))
     import UI.Lambox
 
     main :: IO ()
