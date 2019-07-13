@@ -51,16 +51,16 @@ waitFor window p = go where
       Just ev -> if p ev then pure () else go
 
 -- | Similar to onEvent, but does not \'consume\' event
-onEvent' :: Maybe Event -> (Event -> Bool) -> Curses a -> Curses ()
-onEvent' (Just event) p action = if p event then action >> pure () else pure ()
+onEvent' :: Maybe Event -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
+onEvent' (Just event) p action = if p event then action event >> pure () else pure ()
 onEvent' Nothing _ _           = pure ()
 
 -- | Perform action if event passed meets the event condition, else do nothing
-onEvent :: Window {- replace with Box -} -> (Event -> Bool) -> Curses a -> Curses ()
+onEvent :: Window {- replace with Box -} -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
 onEvent window p action = getEvent window Nothing >>= \event -> onEvent' event p action
 
 -- | Similar to onEvent but happens on any event within the default window
-onEventGlobal :: (Event -> Bool) -> Curses a -> Curses ()
+onEventGlobal :: (Event -> Bool) -> (Event -> Curses a) -> Curses ()
 onEventGlobal p action = do
   def <- defaultWindow
   getEvent def Nothing >>= \event -> onEvent' event p action
