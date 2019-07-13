@@ -70,3 +70,5 @@ data Config = Config --WIP
   , configHeight  :: Integer
   , configAttrs   :: [BoxAttribute]
   } deriving (Eq)
+
+-- newtype Action = Event -> Curses a

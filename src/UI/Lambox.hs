@@ -30,8 +30,8 @@ import UI.Lambox.Internal.Util
 --TODO:
 -- Boxes/Panels
 -- |- borders (dash '-' '|' or hash '#' or dot '*' ******** or plus '+' (or other char)
--- |- gaps                                         *      *
--- |- dimension                                    ********
+-- |- gaps
+-- |- dimension
 -- |- ordering
 -- |- position
 -- Widgets
