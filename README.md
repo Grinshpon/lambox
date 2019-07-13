@@ -1,6 +1,6 @@
 # LamBox
 
-<img src="media/lambox.png" width="100px" height="100px"/>
+<img src="media/lambox.png" width="142px" height="107.5px"/>
 
 ## A Text User Interface Library for Haskell
 
