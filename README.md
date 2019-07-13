@@ -4,7 +4,9 @@
 
 ***This project is a work-in-progress and is not fully operational yet***
 
-LamBox uses the ncurses package to create a high level tool for creating tui's.
+LamBox uses the ncurses package to create a high level tool for creating tui's. 
+Its main purpose is to streamline the process of creating a user interface and 
+eliminate a lot of the boilerplate required to get ncurses up and running.
 
 #### Steps
 

@@ -47,7 +47,7 @@ waitFor w p = onEvent w p (const $ return ())
 
 -- | Similar to onEvent, but does not \'consume\' event
 onEvent' :: Maybe Event -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
-onEvent' (Just event) p action = if p event then action event >> pure () else pure ()
+onEvent' (Just event) p action = if p event then action event *> pure () else pure ()
 onEvent' Nothing _ _           = pure ()
 
 -- | Perform action if event passed meets the event condition, else do nothing
@@ -74,7 +74,7 @@ newBox conf@Config{..} = do
   where
     configureAttrs :: [BoxAttribute] -> Update () --ASSUMES LIST IS SORTED
     configureAttrs [] = pure ()
-    configureAttrs (a:as) = configAttribute a >> configureAttrs as
+    configureAttrs (a:as) = configAttribute a *> configureAttrs as
 
     configAttribute :: BoxAttribute -> Update ()
     configAttribute = \case
@@ -90,7 +90,7 @@ newBox conf@Config{..} = do
             horz = case hAlign of
               AlignTop -> 0
               AlignBot -> configHeight-1
-        moveCursor horz vert >> drawString title
+        moveCursor horz vert *> drawString title
       _ -> pure ()
 
 
@@ -101,7 +101,7 @@ newBox conf@Config{..} = do
 
 -- | Delete panel
 deleteBox :: Box -> Curses ()
-deleteBox (Box _ win pan) = deletePanel pan >> closeWindow win
+deleteBox (Box _ win pan) = deletePanel pan *> closeWindow win
 
 {-
 deleteBoxes :: [Box] -> Curses ()
@@ -109,11 +109,11 @@ deleteBoxes = foldMap deleteBox -}
 
 -- | Literally just a synonym for render
 update :: Curses ()
-update = refreshPanels >> render
+update = refreshPanels *> render
 
 -- | Start the program
 lambox :: Curses a -> IO a
-lambox f = runCurses (setEcho False >> setCursorMode CursorInvisible >> f)
+lambox f = runCurses (setEcho False *> setCursorMode CursorInvisible *> f)
 
 -- TODO :: default configs like full(screen), up half, down third, etc, using direction and ratio
 -- config :: Direction -> Ratio -> Config
@@ -231,7 +231,7 @@ setTitle box@(Box Config{..} win pan) mTitle = do
             horz = case hAlign of
               AlignTop -> 0
               AlignBot -> configHeight-1
-        moveCursor horz vert >> drawString title
+        moveCursor horz vert *> drawString title
   pure (Box (Config configX configY configWidth configHeight newAttrs) win pan)
   where
     findBorder :: [BoxAttribute] -> Borders
