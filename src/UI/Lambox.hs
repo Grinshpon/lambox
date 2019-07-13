@@ -21,6 +21,7 @@ module UI.Lambox
   ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc) (???)
 
 import Data.List (sort)
+import Data.Foldable (traverse_)
 
 import UI.NCurses
 import UI.NCurses.Panel
@@ -44,7 +45,7 @@ import UI.Lambox.Internal.Util
 
 -- | Wait for condition to be met before continuing
 waitFor :: Window -> (Event -> Bool) -> Curses ()
-waitFor w p = onEvent w p (const $ return ())
+waitFor w p = onEvent w p (const $ pure ())
 
 -- | Similar to onEvent, but does is passed the event
 onEvent' :: Maybe Event -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
@@ -61,9 +62,7 @@ onEventBox (Box _ win _) p action = getEvent win Nothing >>= \event -> onEvent' 
 
 -- | Similar to onEvent but happens on any event within the default window
 onEventGlobal :: (Event -> Bool) -> (Event -> Curses a) -> Curses ()
-onEventGlobal p action = do
-  def <- defaultWindow
-  getEvent def Nothing >>= \event -> onEvent' event p action
+onEventGlobal p action = defaultWindow >>= flip getEvent Nothing >>= \event -> onEvent' event p action
 
 -- | If you want to use one of the onEvent's regardless of the event predicate,
 -- simply pass in `true`.
@@ -80,18 +79,15 @@ newBox conf@Config{..} = do
   let box = Box conf win pan
   updateWindow win $ updateBox box
   refreshPanels
-  return box
-
--- setBox :: Box -> Curses a -> Curses ()
--- configBox :: Box -> Config -> Curses Box
+  pure box
 
 -- | Delete panel
 deleteBox :: Box -> Curses ()
 deleteBox (Box _ win pan) = deletePanel pan *> closeWindow win
 
-{-
-deleteBoxes :: [Box] -> Curses ()
-deleteBoxes = foldMap deleteBox -}
+-- | Delete multiple boxes from a foldable set
+deleteBoxes :: Foldable f => f Box -> Curses ()
+deleteBoxes = traverse_ deleteBox
 
 -- | Literally just a synonym for render
 update :: Curses ()
@@ -106,9 +102,9 @@ lambox f = runCurses (setEcho False *> setCursorMode CursorInvisible *> f)
 
 -- | Take a box and a pair of local coordinates and print a string within it
 writeStr :: Box -> Integer -> Integer -> String -> Curses ()
-writeStr (Box conf win pan) x y str = updateWindow win $ do
+writeStr (Box conf win pan) x y str = updateWindow win $
   moveCursor y x
-  drawString str
+  *> drawString str
 
 -- | Like writeStr but with any showable type
 writeShow :: Show a => Box -> Integer -> Integer -> a -> Curses ()
@@ -174,14 +170,14 @@ setBoxAttributes :: Box -> BoxAttributes -> Curses Box
 setBoxAttributes (Box config win pan) newAttrs = do
   let newBox = Box (config { configAttrs = newAttrs }) win pan
   updateWindow win $ updateBox newBox
-  return newBox
+  pure newBox
 
 setBorders :: Box -> Borders -> Curses Box
-setBorders box@(Box cfg _ _) newBorders = do
+setBorders box@(Box cfg _ _) newBorders =
   setBoxAttributes box (configAttrs cfg) { attrBorders = newBorders }
 
 setTitle :: Box -> Maybe Title -> Curses Box
-setTitle box@(Box cfg _ _) newTitle = do
+setTitle box@(Box cfg _ _) newTitle =
   setBoxAttributes box (configAttrs cfg) { attrTitle = newTitle }
 
 updateBox :: Box -> Update ()
@@ -200,7 +196,7 @@ updateBox (Box Config{..} _ _) = do
       (Just $ Glyph '#' [])
     _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
   case attrTitle configAttrs of
-    Nothing -> return ()
+    Nothing -> pure ()
     Just (Title title vAlign hAlign) -> do
       let vert = case vAlign of
             AlignLeft -> 1
