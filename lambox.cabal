@@ -10,7 +10,7 @@ description:
   that allows the creation of simple terminal based text user
   interfaces.
 -- bug-reports:
-license:             BSD-3-Clause
+license:             zlib
 license-file:        LICENSE
 author:              grinshpon
 maintainer:          grinshpondaniel@protonmail.com
