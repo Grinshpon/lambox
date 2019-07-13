@@ -6,4 +6,3 @@
 dist-newstyle/*
 .ghc.*
 cabal.project.*
-/dist
