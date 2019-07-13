@@ -138,7 +138,7 @@ writeShow box x y = ((writeStr box x y) . show)
 -- The direction determines where the new box is in relation
 -- to the passed box, and the fraction is the ratio of the
 -- length or width of the new box to the old.
--- Because this function basically reintroduces more manual
+-- Because this function basically introduces more manual
 -- memory management, it is not something that should be used.
 unsafeSplitBox :: RealFrac a => Box -> Direction -> a -> [BoxAttribute] -> Curses (Box, Box) -- return Curses (Box, Box) (oldbox, newbox) with updated config settings
 unsafeSplitBox (Box Config{..} win pan) dir ratio attrs = do
@@ -191,31 +191,6 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
   box2 <- newBox conf2
   pure (box1,box2)
 
-
-      {-
-      protobox <- newBox (Config x y width height attrs1)
-      unsafeSplitBox protobox DirDown ratio attrs2
-      -- newBox (Config x y width height attrs1) >>= \protobox -> unsafeSplitBox protobox DirDown ratio attrs2
-      -}
-      {-
-      let height1 = ratioIF height ratio
-          height2 = height - height1
-          y1 = y
-          y2 = y + height1
-      box1 <- newBox $ Config x y1 width height1 attrs1
-      box2 <- newBox $ Config x y2 width height2 attrs2
-      pure (box1,box2)
-      -}
-
-{-
-(y,x,height,width) <- updateWindow win $ do --use config instead
-    (y,x) <- windowPosition
-    (height,width) <- windowSize
-    pure (y,x,height,width)
--}
-
-{- -- HAVE TO COMBINE TO setAttrs BECAUSE BORDERS AND TITLES ARE BOTH BoxAttribute TYPE
--}
 setBoxAttributes :: Box -> [BoxAttribute] -> Curses Box
 setBoxAttributes box = \case
   []                            -> pure box
