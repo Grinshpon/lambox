@@ -133,10 +133,8 @@ writeShow box x y = ((writeStr box x y) . show)
 -- The direction determines where the new box is in relation
 -- to the passed box, and the fraction is the ratio of the
 -- length or width of the new box to the old.
--- Because this function basically introduces more manual
--- memory management, it is not something that should be used.
-unsafeSplitBox :: RealFrac a => Box -> Direction -> a -> [BoxAttribute] -> Curses (Box, Box) -- return Curses (Box, Box) (oldbox, newbox) with updated config settings
-unsafeSplitBox (Box Config{..} win pan) dir ratio attrs = do
+splitFromBox :: RealFrac a => Box -> Direction -> a -> [BoxAttribute] -> Curses (Box, Box) -- return Curses (Box, Box) (oldbox, newbox) with updated config settings
+splitFromBox (Box Config{..} win pan) dir ratio attrs = do
   case dir of
     _ -> do -- DirUp
       let nHeight2 = ratioIF configHeight ratio

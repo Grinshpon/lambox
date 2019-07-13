@@ -37,6 +37,6 @@ To Build:
       deleteBox box1
       deleteBox box2
       where
-        go = onEventGlobal (/= EventCharacter 'q') (update >> go)
+        go = onEventGlobal (/= EventCharacter 'q') (\_ -> update >> go)
         title = Title "LamBox" AlignTop AlignRight
         config = Config 2 2 22 10 [Borders Line]
