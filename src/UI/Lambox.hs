@@ -20,7 +20,7 @@ module UI.Lambox
 --  , setCursorMode -- from ncurses
   ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc) (???)
 
-import Data.List (sort)
+-- import Data.List (sort)
 import Data.Foldable (traverse_)
 
 import UI.NCurses
@@ -48,20 +48,20 @@ waitFor :: Window -> (Event -> Bool) -> Curses ()
 waitFor w p = onEvent w p (const $ pure ())
 
 -- | Similar to onEvent, but does is passed the event
-onEvent' :: Maybe Event -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
+onEvent' :: Maybe Event -> (Event -> Bool) -> Action a -> Curses ()
 onEvent' (Just event) p action = if p event then action event *> pure () else pure ()
 onEvent' Nothing _ _           = pure ()
 
 -- | Perform action if event passed within window meets the event condition, else do nothing
-onEvent :: Window -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
+onEvent :: Window -> (Event -> Bool) -> Action a -> Curses ()
 onEvent window p action = getEvent window Nothing >>= \event -> onEvent' event p action
 
 -- | Perform action if event passed within specified box meets the event condition, else do nothing
-onEventBox :: Box -> (Event -> Bool) -> (Event -> Curses a) -> Curses ()
+onEventBox :: Box -> (Event -> Bool) -> Action a -> Curses ()
 onEventBox (Box _ win _) p action = getEvent win Nothing >>= \event -> onEvent' event p action
 
 -- | Similar to onEvent but happens on any event within the default window
-onEventGlobal :: (Event -> Bool) -> (Event -> Curses a) -> Curses ()
+onEventGlobal :: (Event -> Bool) -> Action a -> Curses ()
 onEventGlobal p action = defaultWindow >>= flip getEvent Nothing >>= \event -> onEvent' event p action
 
 -- | If you want to use one of the onEvent's regardless of the event predicate,
@@ -166,20 +166,24 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
   box2 <- newBox conf2
   pure (box1,box2)
 
+-- | Set the attributes of the box, returning the box with updated config
 setBoxAttributes :: Box -> BoxAttributes -> Curses Box
 setBoxAttributes (Box config win pan) newAttrs = do
   let newBox = Box (config { configAttrs = newAttrs }) win pan
   updateWindow win $ updateBox newBox
   pure newBox
 
+-- | Set the borders of the box, returning the box with updated config
 setBorders :: Box -> Borders -> Curses Box
 setBorders box@(Box cfg _ _) newBorders =
   setBoxAttributes box (configAttrs cfg) { attrBorders = newBorders }
 
+-- | Set the title of the box, returning the box with updated config
 setTitle :: Box -> Maybe Title -> Curses Box
 setTitle box@(Box cfg _ _) newTitle =
   setBoxAttributes box (configAttrs cfg) { attrTitle = newTitle }
 
+-- | (NOTE: for internal use) Update the box within `updateWindow`
 updateBox :: Box -> Update ()
 updateBox (Box Config{..} _ _) = do
   case attrBorders configAttrs of

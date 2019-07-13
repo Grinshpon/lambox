@@ -18,7 +18,7 @@ data Border = Border --WIP
   , right    :: Char
   , top      :: Char
   , bottom   :: Char
-  } deriving (Eq,Ord)
+  } deriving (Eq)
 
 data Borders
   = Line
@@ -28,20 +28,20 @@ data Borders
   | None
   | Char Char
   | Custom Border
-  deriving (Eq,Ord)
+  deriving (Eq)
 
-data Title = Title String AlignV AlignH deriving (Eq, Ord)
+data Title = Title String AlignV AlignH deriving (Eq)
 
 data AlignV
   = AlignLeft
   | AlignCenter
   | AlignRight
-  deriving (Eq,Ord)
+  deriving (Eq)
 
 data AlignH
   = AlignTop
   | AlignBot
-  deriving (Eq,Ord)
+  deriving (Eq)
 
 data Direction
   = DirUp
@@ -55,14 +55,11 @@ data Axis
   | Horizontal
   deriving (Eq)
 
-
--- | Ord instance is there because there is an order to drawing attributes
--- so that they do not draw over each other.
 data BoxAttributes = BoxAttributes
   { attrBorders :: Borders
   , attrTitle   :: Maybe Title
   -- todo: background color, border color, text color, global text styling
-  } deriving (Eq, Ord)
+  } deriving (Eq)
 
 data Config = Config --WIP
   { configX       :: Integer
@@ -72,4 +69,4 @@ data Config = Config --WIP
   , configAttrs   :: BoxAttributes
   } deriving (Eq)
 
--- newtype Action = Event -> Curses a
+type Action a = Event -> Curses a

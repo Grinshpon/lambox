@@ -27,8 +27,7 @@ eliminate a lot of the boilerplate required to get ncurses up and running.
       writeStr box2 2 2 "Press 'q' to quit!"
       update
       go
-      deleteBox box1
-      deleteBox box2
+      deleteBoxes [box1, box2]
       where
         go = onEventGlobal (/= EventCharacter 'q') (\_ -> update *> go)
         title = Title "LamBox" AlignRight AlignTop
