@@ -22,6 +22,7 @@ module UI.Lambox
 
 -- import Data.List (sort)
 import Data.Foldable (traverse_)
+import Control.Applicative (liftA2)
 
 import UI.NCurses
 import UI.NCurses.Panel
@@ -77,7 +78,7 @@ newBox conf@Config{..} = do
   win <- newWindow configHeight configWidth configY configX
   pan <- newPanel win
   let box = Box conf win pan
-  updateWindow win $ updateBox box
+  updateBox box
   refreshPanels
   pure box
 
@@ -170,8 +171,7 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
 setBoxAttributes :: Box -> BoxAttributes -> Curses Box
 setBoxAttributes (Box config win pan) newAttrs = do
   let newBox = Box (config { configAttrs = newAttrs }) win pan
-  updateWindow win $ updateBox newBox
-  pure newBox
+  liftA2 (*>) updateBox pure newBox
 
 -- | Set the borders of the box, returning the box with updated config
 setBorders :: Box -> Borders -> Curses Box
@@ -183,9 +183,9 @@ setTitle :: Box -> Maybe Title -> Curses Box
 setTitle box@(Box cfg _ _) newTitle =
   setBoxAttributes box (configAttrs cfg) { attrTitle = newTitle }
 
--- | (NOTE: for internal use) Update the box within `updateWindow`
-updateBox :: Box -> Update ()
-updateBox (Box Config{..} _ _) = do
+-- | (NOTE: for internal use) Update the box to reflect its new config
+updateBox :: Box -> Curses ()
+updateBox (Box Config{..} win pan) = updateWindow win $ do
   case attrBorders configAttrs of
     None -> drawBox Nothing Nothing
     Line -> drawBox (Just glyphLineV) (Just glyphLineH)
