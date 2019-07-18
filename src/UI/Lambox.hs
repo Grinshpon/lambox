@@ -23,6 +23,7 @@ module UI.Lambox
 -- import Data.List (sort)
 import Data.Foldable (traverse_)
 import Control.Applicative (liftA2)
+import Control.Monad ((>=>),(<=<))
 
 import UI.NCurses
 import UI.NCurses.Panel
@@ -166,6 +167,16 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
   box1 <- newBox conf1
   box2 <- newBox conf2
   pure (box1,box2)
+
+-- withBox :: Box -> UpdateBox Box -> Curses Box -- UpdateBox should be a reader and the setAttr stuff should be put within it
+--
+-- set_ box >>= set_ >>= set_
+--
+-- withBox box $ do
+--   setTitle ...
+--   setBorders ...
+with :: Monad m => a -> (a -> m a) -> m a
+with x f = f x
 
 -- | Set the attributes of the box, returning the box with updated config
 setBoxAttributes :: Box -> BoxAttributes -> Curses Box

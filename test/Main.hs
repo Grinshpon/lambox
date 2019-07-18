@@ -3,6 +3,8 @@ module Main where
 import UI.NCurses (Event(..))
 import UI.Lambox
 
+import Control.Monad
+
 main :: IO ()
 main = lambox $ do
   (box1,box2) <- do
