@@ -14,7 +14,7 @@ let
         libraryHaskellDepends = [ base ncurses ];
         executableHaskellDepends = [ base ];
         description = "Text User Interface library for Haskell";
-        license = stdenv.lib.licenses.bsd3;
+        license = "zlib";
       };
 
   haskellPackages = if compiler == "default"
