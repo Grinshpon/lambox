@@ -176,13 +176,14 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
 --   setTitle ...
 --   setBorders ...
 
-foldC :: Monad m => [a -> m a] -> a -> m a
-foldC [] _     = error "empty list"
-foldC [x] a    = x a
-foldC (x:xs) a = x a >>= foldC xs
+foldM' :: (Monad m) => [(a -> m a)] -> a -> m a
+foldM' [] _     = error "empty list"
+foldM' [x] a    = x a
+foldM' (x:xs) a = x a >>= foldM' xs
 
 withBox :: Box -> [Box -> Curses Box] -> Curses Box
-withBox box setAttrs = foldC setAttrs box
+withBox box []       = pure box
+withBox box setAttrs = foldM' setAttrs box
 
 with :: Monad m => a -> (a -> m a) -> m a
 with x f = f x
