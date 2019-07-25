@@ -23,7 +23,7 @@ module UI.Lambox
 -- import Data.List (sort)
 import Data.Foldable (traverse_)
 import Control.Applicative (liftA2)
-import Control.Monad ((>=>),(<=<))
+import Control.Monad
 
 import UI.NCurses
 import UI.NCurses.Panel
@@ -175,24 +175,44 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
 -- withBox box $ do
 --   setTitle ...
 --   setBorders ...
+
+foldC :: Monad m => [a -> m a] -> a -> m a
+foldC [] _     = error "empty list"
+foldC [x] a    = x a
+foldC (x:xs) a = x a >>= foldC xs
+
+withBox :: Box -> [Box -> Curses Box] -> Curses Box
+withBox box setAttrs = foldC setAttrs box
+
 with :: Monad m => a -> (a -> m a) -> m a
 with x f = f x
 
 -- | Set the attributes of the box, returning the box with updated config
-setBoxAttributes :: Box -> BoxAttributes -> Curses Box
-setBoxAttributes (Box config win pan) newAttrs = do
+setBoxAttributes :: BoxAttributes -> Box -> Curses Box
+setBoxAttributes newAttrs (Box config win pan) = do
   let newBox = Box (config { configAttrs = newAttrs }) win pan
   liftA2 (*>) updateBox pure newBox
 
 -- | Set the borders of the box, returning the box with updated config
-setBorders :: Box -> Borders -> Curses Box
-setBorders box@(Box cfg _ _) newBorders =
-  setBoxAttributes box (configAttrs cfg) { attrBorders = newBorders }
+setBorders :: Borders -> Box -> Curses Box
+setBorders newBorders box@(Box cfg _ _) =
+  setBoxAttributes (configAttrs cfg) { attrBorders = newBorders } box
 
 -- | Set the title of the box, returning the box with updated config
-setTitle :: Box -> Maybe Title -> Curses Box
-setTitle box@(Box cfg _ _) newTitle =
-  setBoxAttributes box (configAttrs cfg) { attrTitle = newTitle }
+setTitle :: Maybe Title -> Box -> Curses Box
+setTitle newTitle box@(Box cfg _ _) =
+  setBoxAttributes (configAttrs cfg) { attrTitle = newTitle } box
+
+-- | Set the borders of the box, returning the box with updated config
+setBorders' :: Box -> Borders -> Curses Box
+setBorders' box@(Box cfg _ _) newBorders =
+  setBoxAttributes (configAttrs cfg) { attrBorders = newBorders } box
+
+-- | Set the title of the box, returning the box with updated config
+setTitle' :: Box -> Maybe Title -> Curses Box
+setTitle' box@(Box cfg _ _) newTitle =
+  setBoxAttributes (configAttrs cfg) { attrTitle = newTitle } box
+
 
 -- | (NOTE: for internal use) Update the box to reflect its new config
 updateBox :: Box -> Curses ()
