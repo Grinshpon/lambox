@@ -1,6 +1,22 @@
 -- | Types that are used in UI.Lambox. This module should not be exported, as the necessary types are re-exported through UI.Lambox.
 module UI.Lambox.Internal.Types
-  ( module UI.Lambox.Internal.Types
+  ( -- * Box
+    Box(..)
+    -- * Configuration
+  , Config(..)
+  , Contents(..)
+    -- * Attributes
+  , BoxAttributes(..)
+  , Title(..)
+  , Borders(..)
+  , Border(..)
+    -- * Alignment
+  , AlignV(..)
+  , AlignH(..)
+  , Direction(..)
+  , Axis(..)
+    -- * Action
+  , Action
   ) where
 
 import UI.NCurses
@@ -11,17 +27,30 @@ import Data.Text
 -- | A 'Box' is an @ncurses@ 'Window' and 'Panel' along with a 'Config' providing information and context.
 data Box = Box Config Window Panel {- Contents -}
 
--- | Describe a custom border
-data Border = Border --WIP
-  { topLeft  :: Glyph
-  , topRight :: Glyph
-  , botLeft  :: Glyph
-  , botRight :: Glyph
-  , left     :: Glyph
-  , right    :: Glyph
-  , top      :: Glyph
-  , bottom   :: Glyph
+-- | Box Config, used to set and store information about the Box's position, size, and content.
+data Config = Config --WIP
+  { configX       :: Integer
+  , configY       :: Integer
+  , configWidth   :: Integer
+  , configHeight  :: Integer
+  , configAttrs   :: BoxAttributes
+  , contents      :: Text
   } deriving (Eq)
+
+-- | Inner 'Box' contents
+data Contents
+  = Text !Int !Int Text -- other stuff TODO
+  deriving(Eq)
+
+-- | Stores Box attributes such as borders and title.
+data BoxAttributes = BoxAttributes
+  { attrBorders :: Borders
+  , attrTitle   :: Maybe Title
+  -- todo: background color, border color, text color, global text styling
+  } deriving (Eq)
+
+-- | Set the Box title, given a string and alignment
+data Title = Title String AlignH AlignV deriving (Eq)
 
 -- | Determine what kind of borders should appear around a Box. Can also use any character or any other Glyph from UI.NCurses
 data Borders
@@ -35,8 +64,17 @@ data Borders
   | Custom Border
   deriving (Eq)
 
--- | Set the Box title, given a string and alignment
-data Title = Title String AlignH AlignV deriving (Eq)
+-- | Describe a custom border
+data Border = Border --WIP
+  { topLeft  :: Glyph
+  , topRight :: Glyph
+  , botLeft  :: Glyph
+  , botRight :: Glyph
+  , left     :: Glyph
+  , right    :: Glyph
+  , top      :: Glyph
+  , bottom   :: Glyph
+  } deriving (Eq)
 
 -- | Vertical Alignment
 data AlignV
@@ -64,28 +102,6 @@ data Axis
   = Vertical
   | Horizontal
   deriving (Eq)
-
--- | Stores Box attributes such as borders and title.
-data BoxAttributes = BoxAttributes
-  { attrBorders :: Borders
-  , attrTitle   :: Maybe Title
-  -- todo: background color, border color, text color, global text styling
-  } deriving (Eq)
-
--- | Box Config, used to set and store information about the Box's position, size, and content.
-data Config = Config --WIP
-  { configX       :: Integer
-  , configY       :: Integer
-  , configWidth   :: Integer
-  , configHeight  :: Integer
-  , configAttrs   :: BoxAttributes
-  , contents      :: Text
-  } deriving (Eq)
-
--- | Inner 'Box' contents
-data Contents
-  = Text !Int !Int Text -- other stuff TODO
-  deriving(Eq)
 
 -- | An 'Action' is something that takes an event and runs in the 'Curses' monad
 type Action a = Event -> Curses a
