@@ -370,13 +370,6 @@ waitForWin w p = getEvent w Nothing >>= \case
 onEventWin :: Window -> (Event -> Bool) -> Action a -> Curses ()
 onEventWin = onEventWin' 0
 
--- | If you want to use one of the onEvent's regardless of the event predicate,
--- just pass in `true`, which is simply defined as:
---
--- > true = const True
-true :: a -> Bool
-true = const True
-
 -- | Perform action if event passed within specified Box meets the event condition, else do nothing
 onEventBox' :: Integer -> Box -> (Event -> Bool) -> Action a -> Curses ()
 onEventBox' timeout (Box _ win _) p action = getEvent win (Just timeout) >>= \event -> onEvent event p action
