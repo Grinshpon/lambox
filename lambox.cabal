@@ -28,6 +28,7 @@ extra-source-files:  CHANGELOG.md
 library
   exposed-modules:
     UI.Lambox
+    UI.Lambox.Widgets
       UI.Lambox.Internal.Types
   other-modules:
     UI.Lambox.Internal.Util
