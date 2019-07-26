@@ -18,8 +18,6 @@ eliminate a lot of the boilerplate required to get ncurses up and running.
     import UI.NCurses (Event(..))
     import UI.Lambox
 
-    import Control.Monad
-
     main :: IO ()
     main = lambox $ do
       (box1,box2) <- do
