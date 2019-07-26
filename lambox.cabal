@@ -7,7 +7,7 @@ version:             0.1.0.0
 synopsis:            Text User Interface library for Haskell
 description:
   LamBox is a package built around the haskell ncurses bindings library
-  that allows the creation of simple terminal based text user
+  that allows the creation of simple static or dynamic terminal based text user
   interfaces.
 
   Much of this library acts within the @ncurses@ 'Curses' monad, which
