@@ -371,7 +371,9 @@ onEventWin :: Window -> (Event -> Bool) -> Action a -> Curses ()
 onEventWin = onEventWin' 0
 
 -- | If you want to use one of the onEvent's regardless of the event predicate,
--- simply pass in `true`.
+-- just pass in `true`, which is simply defined as:
+--
+-- > true = const True
 true :: a -> Bool
 true = const True
 
