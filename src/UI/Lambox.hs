@@ -1,5 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE LambdaCase        #-}
 
 -- TODO Reorganize everything
 
@@ -24,6 +25,8 @@ module UI.Lambox
 import Data.Foldable (traverse_)
 import Control.Applicative (liftA2)
 import Control.Monad
+import Data.Text (Text)
+import qualified Data.Text as T
 
 import UI.NCurses
 import UI.NCurses.Panel
@@ -69,7 +72,7 @@ onEventGlobal p action = defaultWindow >>= flip getEvent Nothing >>= \event -> o
 -- | If you want to use one of the onEvent's regardless of the event predicate,
 -- simply pass in `true`.
 true :: a -> Bool
-true  _ = True
+true = const True
 
 -- | Create a panel given a Box type. Because the tui panel uses NCurses'
 -- Panel and Window type, it cannot be garbage collected and must be
@@ -103,14 +106,49 @@ lambox f = runCurses (setEcho False *> setCursorMode CursorInvisible *> f)
 -- config :: Direction -> Ratio -> Config
 
 -- | Take a box and a pair of local coordinates and print a string within it
-writeStr :: Box -> Integer -> Integer -> String -> Curses ()
-writeStr (Box conf win pan) x y str = updateWindow win $
-  moveCursor y x
-  *> drawString str
+writeStr :: Integer -> Integer -> String -> Box -> Curses Box
+writeStr x y str (Box conf win pan) = do
+  let newBox = Box (conf { contents = T.pack str }) win pan
+  updateWindow win $
+    moveCursor y x
+    *> drawString str
+  pure newBox
+
+-- | Take a box and a pair of local coordinates and print some text within it
+writeText :: Integer -> Integer -> Text -> Box -> Curses Box
+writeText x y txt (Box conf win pan) = do
+  let newBox = Box (conf { contents = txt }) win pan
+  updateWindow win $
+    moveCursor y x
+    *> drawText txt
+  pure newBox
 
 -- | Like writeStr but with any showable type
-writeShow :: Show a => Box -> Integer -> Integer -> a -> Curses ()
-writeShow box x y = ((writeStr box x y) . show)
+writeShow :: Show a => Integer -> Integer -> a -> Box -> Curses Box
+writeShow x y a box = ((writeStr' box x y) . show) a
+
+-- | Take a box and a pair of local coordinates and print a string within it
+writeStr' :: Box -> Integer -> Integer -> String -> Curses Box
+writeStr' (Box conf win pan) x y str = do
+  let newBox = Box (conf { contents = T.pack str }) win pan
+  updateWindow win $
+    moveCursor y x
+    *> drawString str
+  pure newBox
+
+-- | Take a box and a pair of local coordinates and print some text within it
+writeText' :: Box -> Integer -> Integer -> Text -> Curses Box
+writeText' (Box conf win pan) x y txt = do
+  let newBox = Box (conf { contents = txt }) win pan
+  updateWindow win $
+    moveCursor y x
+    *> drawText txt
+  pure newBox
+
+-- | Like writeStr but with any showable type
+writeShow' :: Show a => Box -> Integer -> Integer -> a -> Curses Box
+writeShow' box x y = ((writeStr' box x y) . show)
+
 
 -- | Take a box and split it into two boxes, returning the new
 -- box and altering the passed box as a side effect (CAUTION!)
@@ -128,23 +166,23 @@ splitFromBox (Box Config{..} win pan) dir ratio attrs = do
       updateWindow win $ do
         resizeWindow nHeight1 configWidth -- have to redraw borders and title, to fix that bottom border bug
         moveWindow nuY1 configX
-      let nConfig = Config configX nuY2 configWidth nHeight2 attrs
+      let nConfig = Config configX nuY2 configWidth nHeight2 attrs ""
       box2 <- newBox nConfig
-      let nbox1 = Box (Config configX nuY1 configWidth nHeight1 configAttrs) win pan
+      let nbox1 = Box (Config configX nuY1 configWidth nHeight1 configAttrs "") win pan
       pure (nbox1,box2)
 
 -- | Take a config for an area then given the axis and a decimal,
 -- split the area into two boxes. The decimal is that ratio between
 -- the respective dimensions of the first box and second box.
 splitBox :: RealFrac a => Config -> Axis -> a -> Curses (Box,Box)
-splitBox Config{..} axis ratio = splitBox' configX configY configWidth configHeight configAttrs configAttrs axis ratio
+splitBox Config{..} axis ratio = splitBox' configX configY configWidth configHeight configAttrs configAttrs contents contents axis ratio
 
 
 -- | Take x and y coordinates, dimensions, axis, ratio, and
 -- two attribute lists to split the area into two boxes, configuring
 -- each box to the respective attributes (top/left takes first one)
-splitBox' :: RealFrac a => Integer -> Integer -> Integer -> Integer -> BoxAttributes -> BoxAttributes -> Axis -> a -> Curses (Box,Box)
-splitBox' x y width height attrs1 attrs2 axis ratio = do
+splitBox' :: RealFrac a => Integer -> Integer -> Integer -> Integer -> BoxAttributes -> BoxAttributes -> Text -> Text -> Axis -> a -> Curses (Box,Box)
+splitBox' x y width height attrs1 attrs2 txt1 txt2 axis ratio = do
   (conf1, conf2) <- case axis of
     Horizontal -> do
       let width1 = ratioIF width ratio
@@ -152,8 +190,8 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
           x1 = x
           x2 = x + width1
       pure
-        ( Config x1 y width1 height attrs1
-        , Config x2 y width2 height attrs2
+        ( Config x1 y width1 height attrs1 txt1
+        , Config x2 y width2 height attrs2 txt2
         )
     Vertical -> do
       let height1 = ratioIF height ratio
@@ -161,8 +199,8 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
           y1 = y
           y2 = y + height1
       pure
-        ( Config x y1 width height1 attrs1
-        , Config x y2 width height2 attrs2
+        ( Config x y1 width height1 attrs1 txt1
+        , Config x y2 width height2 attrs2 txt2
         )
   box1 <- newBox conf1
   box2 <- newBox conf2
@@ -176,9 +214,10 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
 --   setTitle ...
 --   setBorders ...
 
-withBox :: Box -> [Box -> Curses Box] -> Curses Box
-withBox box []       = pure box
-withBox box setAttrs = (foldl1 (>=>) setAttrs) box
+withBox :: Foldable t => Box -> t (Box -> Curses Box) -> Curses Box
+withBox box setAttrs
+    | not $ null setAttrs = (foldl1 (>=>) setAttrs) box
+    | otherwise           = pure box
 
 -- | Set the attributes of the box, returning the box with updated config
 setBoxAttributes :: BoxAttributes -> Box -> Curses Box
@@ -286,3 +325,7 @@ updateBox (Box Config{..} win pan) = updateWindow win $ do
             AlignTop -> 0
             AlignBot -> configHeight-1
       moveCursor horz vert *> drawString title
+  case contents of
+      ""  -> pure ()
+      txt -> moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
+

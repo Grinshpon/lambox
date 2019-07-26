@@ -5,6 +5,7 @@ import UI.Lambox.Internal.Util
 import UI.NCurses
 import UI.NCurses.Panel
 
+import Data.Text
 -- probably remove all Show instanes, they're not really needed
 
 data Box = Box Config Window Panel {- Contents -}
@@ -68,6 +69,12 @@ data Config = Config --WIP
   , configWidth   :: Integer
   , configHeight  :: Integer
   , configAttrs   :: BoxAttributes
+  , contents      :: Text
   } deriving (Eq)
+
+data Contents
+  = Text !Int !Int Text
+-- | other stuff TODO
+  deriving(Eq)
 
 type Action a = Event -> Curses a
