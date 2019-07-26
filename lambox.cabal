@@ -20,8 +20,8 @@ extra-source-files:  CHANGELOG.md
 library
   exposed-modules:
     UI.Lambox
+      UI.Lambox.Internal.Types
   other-modules:
-    UI.Lambox.Internal.Types
     UI.Lambox.Internal.Util
   -- other-extensions:
   build-depends:

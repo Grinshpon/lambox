@@ -4,10 +4,10 @@
 
 -- TODO Reorganize everything
 
+-- | Main module, also re-exports any types from UI.Lambox.Internal.Types that are needed.
 module UI.Lambox
   ( module UI.Lambox
   , Config(..)
-  --, Box(..)
   , BoxAttributes(..)
   , Borders(..)
   , AlignV(..)
@@ -15,13 +15,8 @@ module UI.Lambox
   , Title(..)
   , Direction(..)
   , Axis(..)
---  , Event(..) -- from ncurses
---  , Curses -- from ncurses
---  , CursorMode(..) --maybe don't re-export ncurses stuff?
---  , setCursorMode -- from ncurses
-  ) where --remember to export relevant ncurses stuff as well (like events, curses, glyphs, etc) (???)
+  ) where
 
--- import Data.List (sort)
 import Data.Foldable (traverse_)
 import Control.Applicative (liftA2)
 import Control.Monad
@@ -36,16 +31,16 @@ import UI.Lambox.Internal.Util
 
 --TODO:
 -- Boxes/Panels
--- |- borders (dash '-' '|' or hash '#' or dot '*' ******** or plus '+' (or other char)
--- |- gaps
--- |- dimension
--- |- ordering
--- |- position
+-- - borders (dash '-' '|' or hash '#' or dot '*' ******** or plus '+' (or other char)
+-- - gaps
+-- - dimension
+-- - ordering
+-- - position
 -- Widgets
--- |- scroll
--- |- text input
--- |- check/radial boxes
--- |- tabs
+-- - scroll
+-- - text input
+-- - check/radial boxes
+-- - tabs
 -- Updaters
 
 -- | Wait for condition to be met before continuing
@@ -108,20 +103,20 @@ lambox f = runCurses (setEcho False *> setCursorMode CursorInvisible *> f)
 -- | Take a box and a pair of local coordinates and print a string within it
 writeStr :: Integer -> Integer -> String -> Box -> Curses Box
 writeStr x y str (Box conf win pan) = do
-  let newBox = Box (conf { contents = T.pack str }) win pan
+  let nBox = Box (conf { contents = T.pack str }) win pan
   updateWindow win $
     moveCursor y x
     *> drawString str
-  pure newBox
+  pure nBox
 
 -- | Take a box and a pair of local coordinates and print some text within it
 writeText :: Integer -> Integer -> Text -> Box -> Curses Box
 writeText x y txt (Box conf win pan) = do
-  let newBox = Box (conf { contents = txt }) win pan
+  let nBox = Box (conf { contents = txt }) win pan
   updateWindow win $
     moveCursor y x
     *> drawText txt
-  pure newBox
+  pure nBox
 
 -- | Like writeStr but with any showable type
 writeShow :: Show a => Integer -> Integer -> a -> Box -> Curses Box
@@ -130,20 +125,20 @@ writeShow x y a box = ((writeStr' box x y) . show) a
 -- | Take a box and a pair of local coordinates and print a string within it
 writeStr' :: Box -> Integer -> Integer -> String -> Curses Box
 writeStr' (Box conf win pan) x y str = do
-  let newBox = Box (conf { contents = T.pack str }) win pan
+  let nBox = Box (conf { contents = T.pack str }) win pan
   updateWindow win $
     moveCursor y x
     *> drawString str
-  pure newBox
+  pure nBox
 
 -- | Take a box and a pair of local coordinates and print some text within it
 writeText' :: Box -> Integer -> Integer -> Text -> Curses Box
 writeText' (Box conf win pan) x y txt = do
-  let newBox = Box (conf { contents = txt }) win pan
+  let nBox = Box (conf { contents = txt }) win pan
   updateWindow win $
     moveCursor y x
     *> drawText txt
-  pure newBox
+  pure nBox
 
 -- | Like writeStr but with any showable type
 writeShow' :: Show a => Box -> Integer -> Integer -> a -> Curses Box
@@ -214,6 +209,7 @@ splitBox' x y width height attrs1 attrs2 txt1 txt2 axis ratio = do
 --   setTitle ...
 --   setBorders ...
 
+-- | Set multiple attributes for a box, returning the box with updated config
 withBox :: Foldable t => Box -> t (Box -> Curses Box) -> Curses Box
 withBox box setAttrs
     | not $ null setAttrs = (foldl1 (>=>) setAttrs) box
@@ -222,8 +218,8 @@ withBox box setAttrs
 -- | Set the attributes of the box, returning the box with updated config
 setBoxAttributes :: BoxAttributes -> Box -> Curses Box
 setBoxAttributes newAttrs (Box config win pan) = do
-  let newBox = Box (config { configAttrs = newAttrs }) win pan
-  liftA2 (*>) updateBox pure newBox
+  let nBox = Box (config { configAttrs = newAttrs }) win pan
+  liftA2 (*>) updateBox pure nBox
 
 -- | Set the borders of the box, returning the box with updated config
 setBorders :: Borders -> Box -> Curses Box
@@ -248,7 +244,7 @@ setTitle' box@(Box cfg _ _) newTitle =
 
 -- | (NOTE: for internal use) Update the box to reflect its new config
 updateBox :: Box -> Curses ()
-updateBox (Box Config{..} win pan) = updateWindow win $ do
+updateBox (Box Config{..} win _) = updateWindow win $ do
   case attrBorders configAttrs of
     Line -> drawBox (Just glyphLineV) (Just glyphLineH)
     Hash -> drawBorder

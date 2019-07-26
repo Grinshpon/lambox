@@ -3,6 +3,7 @@
 *.hi
 *.hp
 *.o
-dist-newstyle/*
+dist/
+dist-newstyle/
 .ghc.*
 cabal.project.*
