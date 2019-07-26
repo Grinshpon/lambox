@@ -25,6 +25,10 @@ import UI.NCurses.Panel
 import Data.Text
 
 -- | A 'Box' is an @ncurses@ 'Window' and 'Panel' along with a 'Config' providing information and context.
+--
+-- The primary motivation behind the Box type is to create an structure that stores information about it in a
+-- way that is easy to reach and modify\/update. Any changes to a Box will return a new one with those changes
+-- saved in its config.
 data Box = Box Config Window Panel {- Contents -}
 
 -- | Box Config, used to set and store information about the Box's position, size, and content.
