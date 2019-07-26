@@ -9,6 +9,7 @@ description:
   LamBox is a package built around the haskell ncurses bindings library
   that allows the creation of simple terminal based text user
   interfaces.
+license:             Zlib
 license-file:        LICENSE
 author:              grinshpon
 maintainer:          grinshpondaniel@protonmail.com
