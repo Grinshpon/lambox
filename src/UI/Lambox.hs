@@ -5,6 +5,12 @@
 -- TODO Reorganize everything
 
 -- | Main module, also re-exports any types from UI.Lambox.Internal.Types that are needed.
+--
+-- Much of this library acts within the @ncurses@ 'Curses' monad, which in itself is a wrapper around 'IO'.
+-- The purpose of this library is to provide a higher level wrapper around @ncurses@ to remove much of the
+-- boilerplate required to set up a tui, and to make building a tui a bit simpler. This library is meant to
+-- be used in conjuction with @ncurses@, as importing UI.NCurses is required to use the 'Event' type, for
+-- instance.
 module UI.Lambox
   ( -- * LamBox
     lambox
@@ -30,12 +36,18 @@ module UI.Lambox
   , writeShow'
   , updateBox
     -- * Event Handling
-  , waitFor
   , onEvent
-  , onEvent'
   , onEventBox
   , onEventGlobal
+  , waitForBox
+  , waitForGlobal
+  , waitForWin
+  , onEventWin
   , true
+  -- ** Event Handling with Timeout
+  , onEventBox'
+  , onEventGlobal'
+  , onEventWin'
   -- * Types
   , Config(..)
   , BoxAttributes(..)
@@ -74,11 +86,11 @@ import UI.Lambox.Internal.Util
 -- Updaters
 
 
--- | Start the program
+-- | Start the program.
 lambox :: Curses a -> IO a
 lambox f = runCurses (setEcho False *> setCursorMode CursorInvisible *> f)
 
--- | Literally just a synonym for render
+-- | Refreshes the Screen. This is a wrapper calling @ncurses@ 'refreshPanels' and 'render'
 update :: Curses ()
 update = refreshPanels *> render
 
@@ -327,28 +339,50 @@ updateBox (Box Config{..} win _) = updateWindow win $ do
       ""  -> pure ()
       txt -> moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
 
--- | Wait for condition to be met before continuing
-waitFor :: Window -> (Event -> Bool) -> Curses ()
-waitFor w p = onEvent w p (const $ pure ())
+-- | Perform action if an event is passed and it meets the event condition, else do nothing
+onEvent :: Maybe Event -> (Event -> Bool) -> Action a -> Curses ()
+onEvent (Just event) p action = if p event then action event *> pure () else pure ()
+onEvent Nothing _ _           = pure ()
 
--- | Perform action if event passed within window meets the event condition, else do nothing
-onEvent :: Window -> (Event -> Bool) -> Action a -> Curses ()
-onEvent window p action = getEvent window Nothing >>= \event -> onEvent' event p action
-
--- | Similar to onEvent, but does is passed the event
-onEvent' :: Maybe Event -> (Event -> Bool) -> Action a -> Curses ()
-onEvent' (Just event) p action = if p event then action event *> pure () else pure ()
-onEvent' Nothing _ _           = pure ()
-
--- | Perform action if event passed within specified box meets the event condition, else do nothing
+-- | Perform action if event passed within specified Box meets the event condition, else do nothing
 onEventBox :: Box -> (Event -> Bool) -> Action a -> Curses ()
-onEventBox (Box _ win _) p action = getEvent win Nothing >>= \event -> onEvent' event p action
+onEventBox = onEventBox' 0
 
--- | Similar to onEvent but happens on any event within the default window
+-- | Similar to 'onEventBox' but happens on any event within the default window
 onEventGlobal :: (Event -> Bool) -> Action a -> Curses ()
-onEventGlobal p action = defaultWindow >>= flip getEvent Nothing >>= \event -> onEvent' event p action
+onEventGlobal = onEventGlobal' 0
+
+-- | Wait for an event condition in the specified Box to be met before continuing
+waitForBox :: Box -> (Event -> Bool) -> Curses ()
+waitForBox (Box _ w _) = waitForWin w
+
+-- | Similar to 'waitForBox' but happens on any event within the default window
+waitForGlobal :: (Event -> Bool) -> Curses ()
+waitForGlobal p = defaultWindow >>= flip waitForWin p
+
+-- | Wait for an event condition in the specified Window to be met before continuing
+waitForWin :: Window -> (Event -> Bool) -> Curses ()
+waitForWin w p = getEvent w Nothing >>= \case
+  Just event -> if p event then pure () else waitForWin w p
+  Nothing    -> waitForWin w p
+
+-- | (NOTE: For internal use mainly) Perform action if event passed within window meets the event condition, else do nothing
+onEventWin :: Window -> (Event -> Bool) -> Action a -> Curses ()
+onEventWin = onEventWin' 0
 
 -- | If you want to use one of the onEvent's regardless of the event predicate,
 -- simply pass in `true`.
 true :: a -> Bool
 true = const True
+
+-- | Perform action if event passed within specified Box meets the event condition, else do nothing
+onEventBox' :: Integer -> Box -> (Event -> Bool) -> Action a -> Curses ()
+onEventBox' timeout (Box _ win _) p action = getEvent win (Just timeout) >>= \event -> onEvent event p action
+
+-- | Similar to `onEventBox'` but happens on any event within the default window
+onEventGlobal' :: Integer -> (Event -> Bool) -> Action a -> Curses ()
+onEventGlobal' timeout p action = defaultWindow >>= flip getEvent (Just timeout) >>= \event -> onEvent event p action
+
+-- | (NOTE: For internal use mainly) Perform action if event passed within window meets the event condition, else do nothing
+onEventWin' :: Integer -> Window -> (Event -> Bool) -> Action a -> Curses ()
+onEventWin' timeout window p action = getEvent window (Just timeout) >>= \event -> onEvent event p action

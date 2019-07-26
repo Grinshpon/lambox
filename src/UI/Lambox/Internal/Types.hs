@@ -97,7 +97,7 @@ data Direction
   | DirRight
   deriving (Eq)
 
--- | Along which axis should the boxes split in the 'splitBox' function. 'Vertical' will split the boxes in a top/bottom fashion, 'Horizontal' splits them left/right.
+-- | Along which axis should the boxes split in the 'splitBox' function. 'Vertical' will split the boxes in a top\/bottom fashion, 'Horizontal' splits them left\/right.
 data Axis
   = Vertical
   | Horizontal

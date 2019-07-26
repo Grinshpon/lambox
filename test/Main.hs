@@ -15,9 +15,8 @@ main = lambox $ do
     nb2 <- writeStr' b2 2 2 "Press 'q' to quit!"
     pure (nb1, nb2)
   update
-  go
+  waitForGlobal (== EventCharacter 'q')
   deleteBoxes [box1, box2]
   where
-    go = onEventGlobal (/= EventCharacter 'q') (\_ -> update *> go)
     title = Title "LamBox" AlignTop AlignRight
     config = Config 2 2 22 10 (BoxAttributes Line Nothing) ""

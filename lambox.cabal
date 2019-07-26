@@ -9,6 +9,14 @@ description:
   LamBox is a package built around the haskell ncurses bindings library
   that allows the creation of simple terminal based text user
   interfaces.
+
+  Much of this library acts within the @ncurses@ 'Curses' monad, which
+  in itself is a wrapper around 'IO'. The purpose of this library is to
+  provide a higher level wrapper around @ncurses@ to remove much of the
+  boilerplate required to set up a tui, and to make building a tui a
+  bit simpler. This library is meant to be used in conjuction with
+  @ncurses@, as importing 'UI.NCurses' is required to use the 'Event' type,
+  for instance.
 license:             Zlib
 license-file:        LICENSE
 author:              grinshpon
