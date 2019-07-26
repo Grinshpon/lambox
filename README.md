@@ -35,3 +35,5 @@ eliminate a lot of the boilerplate required to get ncurses up and running.
         go = onEventGlobal (/= EventCharacter 'q') (\_ -> update *> go)
         title = Title "LamBox" AlignTop AlignRight
         config = Config 2 2 22 10 (BoxAttributes Line Nothing) ""
+
+<img src="media/example.png" width="344px" height="246px"/>
