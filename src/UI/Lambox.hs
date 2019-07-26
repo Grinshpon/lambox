@@ -178,7 +178,7 @@ splitBox' x y width height attrs1 attrs2 axis ratio = do
 
 withBox :: Box -> [Box -> Curses Box] -> Curses Box
 withBox box []       = pure box
-withBox box setAttrs = (foldr1 (>=>) setAttrs) box
+withBox box setAttrs = (foldl1 (>=>) setAttrs) box
 
 -- | Set the attributes of the box, returning the box with updated config
 setBoxAttributes :: BoxAttributes -> Box -> Curses Box
@@ -211,7 +211,6 @@ setTitle' box@(Box cfg _ _) newTitle =
 updateBox :: Box -> Curses ()
 updateBox (Box Config{..} win pan) = updateWindow win $ do
   case attrBorders configAttrs of
-    None -> drawBox Nothing Nothing
     Line -> drawBox (Just glyphLineV) (Just glyphLineH)
     Hash -> drawBorder
       (Just $ Glyph '#' [])
@@ -222,7 +221,60 @@ updateBox (Box Config{..} win pan) = updateWindow win $ do
       (Just $ Glyph '#' [])
       (Just $ Glyph '#' [])
       (Just $ Glyph '#' [])
-    _ -> drawBox (Just glyphLineV) (Just glyphLineH) -- TODO: Complete
+    Dot -> drawBorder
+      (Just $ Glyph '*' [])
+      (Just $ Glyph '*' [])
+      (Just $ Glyph '*' [])
+      (Just $ Glyph '*' [])
+      (Just $ Glyph '*' [])
+      (Just $ Glyph '*' [])
+      (Just $ Glyph '*' [])
+      (Just $ Glyph '*' [])
+    Plus -> drawBorder
+      (Just $ Glyph '+' [])
+      (Just $ Glyph '+' [])
+      (Just $ Glyph '+' [])
+      (Just $ Glyph '+' [])
+      (Just $ Glyph '+' [])
+      (Just $ Glyph '+' [])
+      (Just $ Glyph '+' [])
+      (Just $ Glyph '+' [])
+    None -> drawBorder
+      (Just $ Glyph ' ' [])
+      (Just $ Glyph ' ' [])
+      (Just $ Glyph ' ' [])
+      (Just $ Glyph ' ' [])
+      (Just $ Glyph ' ' [])
+      (Just $ Glyph ' ' [])
+      (Just $ Glyph ' ' [])
+      (Just $ Glyph ' ' [])
+    (Char c) -> drawBorder
+      (Just $ Glyph c [])
+      (Just $ Glyph c [])
+      (Just $ Glyph c [])
+      (Just $ Glyph c [])
+      (Just $ Glyph c [])
+      (Just $ Glyph c [])
+      (Just $ Glyph c [])
+      (Just $ Glyph c [])
+    (Symbol g) -> drawBorder
+      (Just g)
+      (Just g)
+      (Just g)
+      (Just g)
+      (Just g)
+      (Just g)
+      (Just g)
+      (Just g)
+    (Custom border) -> drawBorder
+      (Just $ left border)
+      (Just $ right border)
+      (Just $ top border)
+      (Just $ bottom border)
+      (Just $ topLeft border)
+      (Just $ topRight border)
+      (Just $ botLeft border)
+      (Just $ botRight border)
   case attrTitle configAttrs of
     Nothing -> pure ()
     Just (Title title hAlign vAlign) -> do

@@ -10,14 +10,14 @@ import UI.NCurses.Panel
 data Box = Box Config Window Panel {- Contents -}
 
 data Border = Border --WIP
-  { topLeft  :: Char
-  , topRight :: Char
-  , botLeft  :: Char
-  , botRight :: Char
-  , left     :: Char
-  , right    :: Char
-  , top      :: Char
-  , bottom   :: Char
+  { topLeft  :: Glyph
+  , topRight :: Glyph
+  , botLeft  :: Glyph
+  , botRight :: Glyph
+  , left     :: Glyph
+  , right    :: Glyph
+  , top      :: Glyph
+  , bottom   :: Glyph
   } deriving (Eq)
 
 data Borders
@@ -27,6 +27,7 @@ data Borders
   | Plus
   | None
   | Char Char
+  | Symbol Glyph
   | Custom Border
   deriving (Eq)
 
