@@ -3,13 +3,15 @@ cabal-version:       2.4
 -- further documentation, see http://haskell.org/cabal/users-guide/
 
 name:                lambox
-version:             0.1.0.0
+version:             0.1.0
 synopsis:            Text User Interface library for Haskell
 description:
-  LamBox is a package built around the haskell ncurses bindings library
-  that allows the creation of simple static or dynamic terminal based text user
-  interfaces.
-
+  LamBox is a package built around the haskell ncurses bindings library to
+  provide a high level tool that allows the creation of simple static or
+  dynamic terminal based text user interfaces. Its main purpose is to
+  streamline the process of creating a user interface and eliminate a lot
+  of the boilerplate required to get ncurses up and running.
+  .
   Much of this library acts within the @ncurses@ 'Curses' monad, which
   in itself is a wrapper around 'IO'. The purpose of this library is to
   provide a higher level wrapper around @ncurses@ to remove much of the
@@ -17,6 +19,35 @@ description:
   bit simpler. This library is meant to be used in conjuction with
   @ncurses@, as importing 'UI.NCurses' is required to use the 'Event' type,
   for instance.
+  .
+  Example:
+  .
+  @
+    &#123;-&#35; LANGUAGE OverloadedStrings &#35;-&#125;
+    .
+    module Main where
+    .
+    import UI.NCurses (Event(..))
+    import UI.Lambox
+    .
+    main :: IO ()
+    main = lambox $ do
+    &#32;&#32;(box1,box2) <- do
+    &#32;&#32;&#32;&#32;(b1,b2) <- splitBox config Vertical 0.5
+    &#32;&#32;&#32;&#32;nb1 <- withBox b1
+    &#32;&#32;&#32;&#32;&#32;&#32;[ setTitle (Just title)
+    &#32;&#32;&#32;&#32;&#32;&#32;, writeStr 2 2 &#34;Hello World!&#34;
+    &#32;&#32;&#32;&#32;&#32;&#32;]
+    &#32;&#32;&#32;&#32;nb2 <- writeStr' b2 2 2 &#34;Press &#39;q&#39; to quit!&#34;
+    &#32;&#32;&#32;&#32;pure (nb1, nb2)
+    &#32;&#32;update
+    &#32;&#32;waitForGlobal (== EventCharacter &#39;q&#39;)
+    &#32;&#32;deleteBoxes [box1, box2]
+    &#32;&#32;where
+    &#32;&#32;&#32;&#32;title = Title &#34;LamBox&#34; AlignTop AlignRight
+    &#32;&#32;&#32;&#32;config = Config 2 2 22 10 (BoxAttributes Line Nothing) &#34;&#34;
+  @
+  .
 license:             Zlib
 license-file:        LICENSE
 author:              grinshpon
@@ -35,8 +66,8 @@ library
   -- other-extensions:
   build-depends:
       base ^>=4.12.0.0
-    , ncurses
-    , text
+    , ncurses >= 0.2.16 && < 0.3
+    , text >= 1.2.3 && < 1.3
   hs-source-dirs:      src
   ghc-options:
     -Wall
@@ -50,7 +81,7 @@ executable test
   build-depends:
       base ^>=4.12.0.0
     , lambox
-    , ncurses
+    , ncurses >= 0.2.16 && < 0.3
   hs-source-dirs:      test
   ghc-options:
     -Wall

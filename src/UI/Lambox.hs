@@ -142,6 +142,7 @@ splitBox' x y width height attrs1 attrs2 txt1 txt2 axis ratio = do
 
 -- | Take a box and split it into two boxes, returning the new
 -- box and altering the passed box as a side effect (CAUTION!)
+--
 -- The direction determines where the new box is in relation
 -- to the passed box, and the fraction is the ratio of the
 -- length or width of the new box to the old.
@@ -161,7 +162,7 @@ splitFromBox (Box Config{..} win pan) dir ratio attrs = do
       let nbox1 = Box (Config configX nuY1 configWidth nHeight1 configAttrs "") win pan
       pure (nbox1,box2)
 
--- | Delete panel
+-- | Delete box. Because @ncurses@ 'Window's and 'Panel's are not garbage collected, calling this at the end of a Box's lifecycle is required.
 deleteBox :: Box -> Curses ()
 deleteBox (Box _ win pan) = deletePanel pan *> closeWindow win
 
@@ -360,7 +361,7 @@ waitForBox (Box _ w _) = waitForWin w
 waitForGlobal :: (Event -> Bool) -> Curses ()
 waitForGlobal p = defaultWindow >>= flip waitForWin p
 
--- | Wait for an event condition in the specified Window to be met before continuing
+-- | (NOTE: For internal use mainly) Wait for an event condition in the specified Window to be met before continuing
 waitForWin :: Window -> (Event -> Bool) -> Curses ()
 waitForWin w p = getEvent w Nothing >>= \case
   Just event -> if p event then pure () else waitForWin w p
