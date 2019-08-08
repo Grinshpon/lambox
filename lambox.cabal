@@ -3,7 +3,7 @@ cabal-version:       2.4
 -- further documentation, see http://haskell.org/cabal/users-guide/
 
 name:                lambox
-version:             0.1.0
+version:             0.1.0.0
 synopsis:            Text User Interface library for Haskell
 description:
   LamBox is a package built around the haskell ncurses bindings library to
@@ -38,7 +38,7 @@ description:
     &#32;&#32;&#32;&#32;&#32;&#32;[ setTitle (Just title)
     &#32;&#32;&#32;&#32;&#32;&#32;, writeStr 2 2 &#34;Hello World!&#34;
     &#32;&#32;&#32;&#32;&#32;&#32;]
-    &#32;&#32;&#32;&#32;nb2 <- writeStr' b2 2 2 &#34;Press &#39;q&#39; to quit!&#34;
+    &#32;&#32;&#32;&#32;nb2 <- writeStr&#39; b2 2 2 &#34;Press &#39;q&#39; to quit!&#34;
     &#32;&#32;&#32;&#32;pure (nb1, nb2)
     &#32;&#32;update
     &#32;&#32;waitForGlobal (== EventCharacter &#39;q&#39;)
