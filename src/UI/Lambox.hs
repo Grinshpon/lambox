@@ -24,10 +24,15 @@ module UI.Lambox
   , deleteBoxes
   , withBox
   , setBoxAttributes
+  , setBoxConfig
   , setBorders
   , setBorders'
   , setTitle
   , setTitle'
+  , setCoords
+  , setCoords'
+  , setDimension
+  , setDimension'
   , writeStr
   , writeStr'
   , writeText
@@ -189,9 +194,15 @@ withBox box setAttrs
 
 -- | Set the attributes of the box, returning the box with updated config
 setBoxAttributes :: BoxAttributes -> Box -> Curses Box
-setBoxAttributes newAttrs (Box config win pan) = do
-  let nBox = Box (config { configAttrs = newAttrs }) win pan
-  liftA2 (*>) updateBox pure nBox
+setBoxAttributes newAttrs box@(Box config _win _pan) =
+  setBoxConfig (config { configAttrs = newAttrs }) box
+--  let nBox = Box (config { configAttrs = newAttrs }) win pan
+--  liftA2 (*>) updateBox pure nBox
+
+-- | Set the new config of the box, returning the box with updated config
+setBoxConfig :: Config -> Box -> Curses Box
+setBoxConfig newConf (Box _ win pan) =
+  liftA2 (*>) updateBox pure $ Box (newConf) win pan
 
 -- | Set the borders of the box, returning the box with updated config
 setBorders :: Borders -> Box -> Curses Box
@@ -200,8 +211,7 @@ setBorders newBorders box@(Box cfg _ _) =
 
 -- | Set the borders of the box, returning the box with updated config
 setBorders' :: Box -> Borders -> Curses Box
-setBorders' box@(Box cfg _ _) newBorders =
-  setBoxAttributes (configAttrs cfg) { attrBorders = newBorders } box
+setBorders' = flip setBorders
 
 -- | Set the title of the box, returning the box with updated config
 setTitle :: Maybe Title -> Box -> Curses Box
@@ -210,8 +220,33 @@ setTitle newTitle box@(Box cfg _ _) =
 
 -- | Set the title of the box, returning the box with updated config
 setTitle' :: Box -> Maybe Title -> Curses Box
-setTitle' box@(Box cfg _ _) newTitle =
-  setBoxAttributes (configAttrs cfg) { attrTitle = newTitle } box
+setTitle' = flip setTitle
+
+-- | Set the position of the box, returning the box with updated config
+setCoords :: ()
+  => Integer -- ^ Horizontal position (x)
+  -> Integer -- ^ Vertical position (y)
+  -> Box
+  -> Curses Box
+setCoords x y box@(Box cfg _ _) =
+  setBoxConfig (cfg { configX = x, configY = y }) box
+
+-- | Set the position of the box, returning the box with updated config
+setCoords' :: Box -> Integer -> Integer -> Curses Box
+setCoords' box x y = setCoords x y box
+
+-- | Set the dimension of the box, returning the box with updated config
+setDimension :: ()
+  => Integer -- ^ Width
+  -> Integer -- ^ Height
+  -> Box
+  -> Curses Box
+setDimension width height box@(Box cfg _ _) =
+  setBoxConfig (cfg { configWidth = width, configHeight = height }) box
+
+-- | Set the dimension of the box, returning the box with updated config
+setDimension' :: Box -> Integer -> Integer -> Curses Box
+setDimension' box w h = setDimension w h box
 
 -- | Take a box and a pair of local coordinates and print a string within it
 writeStr :: Integer -> Integer -> String -> Box -> Curses Box
@@ -224,12 +259,7 @@ writeStr x y str (Box conf win pan) = do
 
 -- | Take a box and a pair of local coordinates and print a string within it
 writeStr' :: Box -> Integer -> Integer -> String -> Curses Box
-writeStr' (Box conf win pan) x y str = do
-  let nBox = Box (conf { contents = T.pack str }) win pan
-  updateWindow win $
-    moveCursor y x
-    *> drawString str
-  pure nBox
+writeStr' box x y str = writeStr x y str box
 
 -- | Take a box and a pair of local coordinates and print some text within it
 writeText :: Integer -> Integer -> Text -> Box -> Curses Box
@@ -242,103 +272,61 @@ writeText x y txt (Box conf win pan) = do
 
 -- | Take a box and a pair of local coordinates and print some text within it
 writeText' :: Box -> Integer -> Integer -> Text -> Curses Box
-writeText' (Box conf win pan) x y txt = do
-  let nBox = Box (conf { contents = txt }) win pan
-  updateWindow win $
-    moveCursor y x
-    *> drawText txt
-  pure nBox
+writeText' box x y txt = writeText x y txt box
 
 -- | Like writeStr but with any showable type
 writeShow :: Show a => Integer -> Integer -> a -> Box -> Curses Box
-writeShow x y a box = ((writeStr' box x y) . show) a
+writeShow x y a box = writeShow' box x y a
 
 -- | Like writeStr but with any showable type
 writeShow' :: Show a => Box -> Integer -> Integer -> a -> Curses Box
 writeShow' box x y = ((writeStr' box x y) . show)
 
+defaultBorder :: Maybe Glyph -> Update ()
+defaultBorder g =
+  drawBorder g g g g g g g g
+
 -- | (NOTE: for internal use) Update the box to reflect its new config
 updateBox :: Box -> Curses ()
-updateBox (Box Config{..} win _) = updateWindow win $ do
-  case attrBorders configAttrs of
-    Line -> drawBox (Just glyphLineV) (Just glyphLineH)
-    Hash -> drawBorder
-      (Just $ Glyph '#' [])
-      (Just $ Glyph '#' [])
-      (Just $ Glyph '#' [])
-      (Just $ Glyph '#' [])
-      (Just $ Glyph '#' [])
-      (Just $ Glyph '#' [])
-      (Just $ Glyph '#' [])
-      (Just $ Glyph '#' [])
-    Dot -> drawBorder
-      (Just $ Glyph '*' [])
-      (Just $ Glyph '*' [])
-      (Just $ Glyph '*' [])
-      (Just $ Glyph '*' [])
-      (Just $ Glyph '*' [])
-      (Just $ Glyph '*' [])
-      (Just $ Glyph '*' [])
-      (Just $ Glyph '*' [])
-    Plus -> drawBorder
-      (Just $ Glyph '+' [])
-      (Just $ Glyph '+' [])
-      (Just $ Glyph '+' [])
-      (Just $ Glyph '+' [])
-      (Just $ Glyph '+' [])
-      (Just $ Glyph '+' [])
-      (Just $ Glyph '+' [])
-      (Just $ Glyph '+' [])
-    None -> drawBorder
-      (Just $ Glyph ' ' [])
-      (Just $ Glyph ' ' [])
-      (Just $ Glyph ' ' [])
-      (Just $ Glyph ' ' [])
-      (Just $ Glyph ' ' [])
-      (Just $ Glyph ' ' [])
-      (Just $ Glyph ' ' [])
-      (Just $ Glyph ' ' [])
-    (Char c) -> drawBorder
-      (Just $ Glyph c [])
-      (Just $ Glyph c [])
-      (Just $ Glyph c [])
-      (Just $ Glyph c [])
-      (Just $ Glyph c [])
-      (Just $ Glyph c [])
-      (Just $ Glyph c [])
-      (Just $ Glyph c [])
-    (Symbol g) -> drawBorder
-      (Just g)
-      (Just g)
-      (Just g)
-      (Just g)
-      (Just g)
-      (Just g)
-      (Just g)
-      (Just g)
-    (Custom border) -> drawBorder
-      (Just $ left border)
-      (Just $ right border)
-      (Just $ top border)
-      (Just $ bottom border)
-      (Just $ topLeft border)
-      (Just $ topRight border)
-      (Just $ botLeft border)
-      (Just $ botRight border)
-  case attrTitle configAttrs of
-    Nothing -> pure ()
-    Just (Title title hAlign vAlign) -> do
-      let vert = case vAlign of
-            AlignLeft -> 1
-            AlignCenter -> (configWidth `quot` 2) - ((toInteger $ length title) `quot` 2)
-            AlignRight -> (configWidth-1) - (toInteger $ length title)
-          horz = case hAlign of
-            AlignTop -> 0
-            AlignBot -> configHeight-1
-      moveCursor horz vert *> drawString title
-  case contents of
+updateBox (Box Config{..} win pan) = do
+  movePanel pan configY configX
+  updateWindow win $ do
+    clear
+    --moveWindow configY configX
+    resizeWindow configHeight configWidth
+    case attrBorders configAttrs of
+      Line            -> drawBox (Just glyphLineV) (Just glyphLineH)
+      Hash            -> defaultBorder (Just $ Glyph '#' [])
+      Dot             -> defaultBorder (Just $ Glyph '*' [])
+      Plus            -> defaultBorder (Just $ Glyph '+' [])
+      None            -> defaultBorder (Just $ Glyph ' ' [])
+      Char c          -> defaultBorder (Just $ Glyph c   [])
+      Symbol g        -> defaultBorder (Just g)
+      Custom border   ->
+        drawBorder
+          (Just $ left border)
+          (Just $ right border)
+          (Just $ top border)
+          (Just $ bottom border)
+          (Just $ topLeft border)
+          (Just $ topRight border)
+          (Just $ botLeft border)
+          (Just $ botRight border)
+    case attrTitle configAttrs of
+      Nothing -> pure ()
+      Just (Title title hAlign vAlign) -> do
+        let vert = case vAlign of
+              AlignLeft -> 1
+              AlignCenter -> (configWidth `quot` 2) - ((toInteger $ length title) `quot` 2)
+              AlignRight -> (configWidth-1) - (toInteger $ length title)
+            horz = case hAlign of
+              AlignTop -> 0
+              AlignBot -> configHeight-1
+        moveCursor horz vert *> drawString title
+    case contents of
       ""  -> pure ()
-      txt -> moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
+      txt -> pure () -- moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
+  refreshPanels
 
 -- | Perform action if an event is passed and it meets the event condition, else do nothing
 onEvent :: Maybe Event -> (Event -> Bool) -> Action a -> Curses ()
