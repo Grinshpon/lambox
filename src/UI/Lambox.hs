@@ -22,6 +22,12 @@ module UI.Lambox
   , splitFromBox
   , deleteBox
   , deleteBoxes
+    -- * Accessing Boxes
+  , getPosition
+  , getDimension
+  , getAttributes
+  , getBoxContents
+    -- * Modifying Boxes
   , withBox
   , setBoxAttributes
   , setBoxConfig
@@ -29,8 +35,8 @@ module UI.Lambox
   , setBorders'
   , setTitle
   , setTitle'
-  , setCoords
-  , setCoords'
+  , setPosition
+  , setPosition'
   , setDimension
   , setDimension'
   , writeStr
@@ -175,6 +181,23 @@ deleteBox (Box _ win pan) = deletePanel pan *> closeWindow win
 deleteBoxes :: Foldable f => f Box -> Curses ()
 deleteBoxes = traverse_ deleteBox
 
+-- | Get the position (x,y) of a box
+getPosition :: Box -> (Integer, Integer)
+getPosition (Box Config{..} _ _) = (configX, configY)
+
+-- | Get the dimensions (width,height) of a box
+getDimension :: Box -> (Integer, Integer)
+getDimension (Box Config{..} _ _) = (configWidth, configHeight)
+
+-- | Get the attributes of a box
+getAttributes :: Box -> BoxAttributes
+getAttributes (Box Config{..} _ _) = configAttrs
+
+-- | Get the contents of a box
+getBoxContents :: Box -> Text
+getBoxContents (Box Config{..} _ _) = contents
+
+
 -- withBox :: Box -> UpdateBox Box -> Curses Box -- UpdateBox should be a reader and the setAttr stuff should be put within it
 --
 -- set_ box >>= set_ >>= set_
@@ -196,8 +219,6 @@ withBox box setAttrs
 setBoxAttributes :: BoxAttributes -> Box -> Curses Box
 setBoxAttributes newAttrs box@(Box config _win _pan) =
   setBoxConfig (config { configAttrs = newAttrs }) box
---  let nBox = Box (config { configAttrs = newAttrs }) win pan
---  liftA2 (*>) updateBox pure nBox
 
 -- | Set the new config of the box, returning the box with updated config
 setBoxConfig :: Config -> Box -> Curses Box
@@ -223,17 +244,17 @@ setTitle' :: Box -> Maybe Title -> Curses Box
 setTitle' = flip setTitle
 
 -- | Set the position of the box, returning the box with updated config
-setCoords :: ()
+setPosition :: ()
   => Integer -- ^ Horizontal position (x)
   -> Integer -- ^ Vertical position (y)
   -> Box
   -> Curses Box
-setCoords x y box@(Box cfg _ _) =
+setPosition x y box@(Box cfg _ _) =
   setBoxConfig (cfg { configX = x, configY = y }) box
 
 -- | Set the position of the box, returning the box with updated config
-setCoords' :: Box -> Integer -> Integer -> Curses Box
-setCoords' box x y = setCoords x y box
+setPosition' :: Box -> Integer -> Integer -> Curses Box
+setPosition' box x y = setPosition x y box
 
 -- | Set the dimension of the box, returning the box with updated config
 setDimension :: ()
@@ -326,7 +347,6 @@ updateBox (Box Config{..} win pan) = do
     case contents of
       ""  -> pure ()
       txt -> pure () -- moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
-  refreshPanels
 
 -- | Perform action if an event is passed and it meets the event condition, else do nothing
 onEvent :: Maybe Event -> (Event -> Bool) -> Action a -> Curses ()
