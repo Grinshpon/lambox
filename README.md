@@ -21,7 +21,7 @@ eliminate a lot of the boilerplate required to get ncurses up and running.
     main :: IO ()
     main = lambox $ do
       (box1,box2) <- do
-        (b1,b2) <- splitBox config Vertical 0.5
+        (b1,b2) <- splitBox config Horizontal 0.5
         nb1 <- withBox b1
           [ setTitle (Just title)
           , writeStr 2 2 "Hello World!"

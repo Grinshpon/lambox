@@ -33,7 +33,7 @@ description:
     main :: IO ()
     main = lambox $ do
     &#32;&#32;(box1,box2) <- do
-    &#32;&#32;&#32;&#32;(b1,b2) <- splitBox config Vertical 0.5
+    &#32;&#32;&#32;&#32;(b1,b2) <- splitBox config Horizontal 0.5
     &#32;&#32;&#32;&#32;nb1 <- withBox b1
     &#32;&#32;&#32;&#32;&#32;&#32;[ setTitle (Just title)
     &#32;&#32;&#32;&#32;&#32;&#32;, writeStr 2 2 &#34;Hello World!&#34;

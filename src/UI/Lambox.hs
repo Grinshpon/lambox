@@ -129,7 +129,7 @@ splitBox Config{..} axis ratio = splitBox' configX configY configWidth configHei
 splitBox' :: RealFrac a => Integer -> Integer -> Integer -> Integer -> BoxAttributes -> BoxAttributes -> Text -> Text -> Axis -> a -> Curses (Box,Box)
 splitBox' x y width height attrs1 attrs2 txt1 txt2 axis ratio = do
   (conf1, conf2) <- case axis of
-    Horizontal -> do
+    Vertical -> do
       let width1 = ratioIF width ratio
           width2 = width - width1
           x1 = x
@@ -138,7 +138,7 @@ splitBox' x y width height attrs1 attrs2 txt1 txt2 axis ratio = do
         ( Config x1 y width1 height attrs1 txt1
         , Config x2 y width2 height attrs2 txt2
         )
-    Vertical -> do
+    Horizontal -> do
       let height1 = ratioIF height ratio
           height2 = height - height1
           y1 = y
