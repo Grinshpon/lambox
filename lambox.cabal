@@ -3,7 +3,7 @@ cabal-version:       2.4
 -- further documentation, see http://haskell.org/cabal/users-guide/
 
 name:                lambox
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            Text User Interface library for Haskell
 description:
   LamBox is a package built around the haskell ncurses bindings library to
@@ -50,7 +50,7 @@ description:
   .
 license:             Zlib
 license-file:        LICENSE
-author:              grinshpon
+author:              Grinshpon
 maintainer:          grinshpondaniel@protonmail.com
 copyright:           2019 Daniel Grinshpon
 category:            Development

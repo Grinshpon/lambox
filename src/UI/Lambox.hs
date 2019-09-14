@@ -2,8 +2,6 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE LambdaCase        #-}
 
--- TODO Reorganize everything
-
 -- | Main module, also re-exports any types from UI.Lambox.Internal.Types that are needed.
 --
 -- Much of this library acts within the @ncurses@ 'Curses' monad, which in itself is a wrapper around 'IO'.
@@ -83,10 +81,7 @@ import UI.Lambox.Internal.Types
 import UI.Lambox.Internal.Util
 
 --TODO:
--- Boxes/Panels
--- - borders (dash '-' '|' or hash '#' or dot '*' ******** or plus '+' (or other char)
 -- - gaps
--- - dimension
 -- - ordering
 -- - position
 -- Widgets
@@ -94,8 +89,6 @@ import UI.Lambox.Internal.Util
 -- - text input
 -- - check/radial boxes
 -- - tabs
--- Updaters
-
 
 -- | Start the program.
 lambox :: Curses a -> IO a
@@ -197,15 +190,6 @@ getAttributes (Box Config{..} _ _) = configAttrs
 getBoxContents :: Box -> [Content]
 getBoxContents (Box Config{..} _ _) = contents
 
-
--- withBox :: Box -> UpdateBox Box -> Curses Box -- UpdateBox should be a reader and the setAttr stuff should be put within it
---
--- set_ box >>= set_ >>= set_
---
--- withBox box $ do
---   setTitle ...
---   setBorders ...
-
 -- | Set multiple attributes for a box, returning the box with updated config
 withBox :: Foldable t => Box -> t (Box -> Curses Box) -> Curses Box
 withBox box setAttrs
@@ -213,7 +197,6 @@ withBox box setAttrs
     | otherwise           = pure box
 
 -- TODO :: default configs like full(screen), up half, down third, etc, using direction and ratio
--- config :: Direction -> Ratio -> Config
 
 -- | Set the attributes of the box, returning the box with updated config
 setBoxAttributes :: BoxAttributes -> Box -> Curses Box
@@ -316,14 +299,14 @@ updateBox (Box Config{..} win pan) = do
     --moveWindow configY configX
     resizeWindow configHeight configWidth
     case attrBorders configAttrs of
-      Line            -> drawBox (Just glyphLineV) (Just glyphLineH)
-      Hash            -> defaultBorder (Just $ Glyph '#' [])
-      Dot             -> defaultBorder (Just $ Glyph '*' [])
-      Plus            -> defaultBorder (Just $ Glyph '+' [])
-      None            -> defaultBorder (Just $ Glyph ' ' [])
-      Char c          -> defaultBorder (Just $ Glyph c   [])
-      Symbol g        -> defaultBorder (Just g)
-      Custom border   ->
+      Line          -> drawBox (Just glyphLineV) (Just glyphLineH)
+      Hash          -> defaultBorder (Just $ Glyph '#' [])
+      Dot           -> defaultBorder (Just $ Glyph '*' [])
+      Plus          -> defaultBorder (Just $ Glyph '+' [])
+      None          -> defaultBorder (Just $ Glyph ' ' [])
+      Char c        -> defaultBorder (Just $ Glyph c   [])
+      Symbol g      -> defaultBorder (Just g)
+      Custom border ->
         drawBorder
           (Just $ left border)
           (Just $ right border)
@@ -346,10 +329,8 @@ updateBox (Box Config{..} win pan) = do
         moveCursor horz vert *> drawString title
     case contents of
       []  -> pure ()
-      txt -> do
-        _ <- forM txt $ \(Text x y t) -> moveCursor y x *> drawText t
-        pure ()
-        --pure () -- moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
+      txt ->
+        (forM txt $ \(Text x y t) -> moveCursor y x *> drawText t) *> pure ()
 
 -- | Perform action if an event is passed and it meets the event condition, else do nothing
 onEvent :: Maybe Event -> (Event -> Bool) -> Action a -> Curses ()

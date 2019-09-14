@@ -43,9 +43,9 @@ data Config = Config --WIP
   , contents      :: [Content]
   } deriving (Eq)
 
--- | Inner 'Box' contents
+-- | Inner 'Box' contents. The two numbers (x,y) represent the starting point of the text within the Box.
 data Content
-  = Text !Integer !Integer Text -- other stuff TODO
+  = Text !Integer !Integer Text
   deriving(Eq)
 
 -- | Stores Box attributes such as borders and title.
