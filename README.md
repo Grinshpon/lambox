@@ -33,6 +33,6 @@ eliminate a lot of the boilerplate required to get ncurses up and running.
       deleteBoxes [box1, box2]
       where
         title = Title "LamBox" AlignTop AlignRight
-        config = Config 2 2 22 10 (BoxAttributes Line Nothing) ""
+        config = Config 2 2 22 10 (BoxAttributes Line Nothing) []
 
 <img src="media/example.png" width="344px" height="246px"/>

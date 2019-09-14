@@ -19,4 +19,4 @@ main = lambox $ do
   deleteBoxes [box1, box2]
   where
     title = Title "LamBox" AlignTop AlignRight
-    config = Config 2 2 22 10 (BoxAttributes Line Nothing) ""
+    config = Config 2 2 22 10 (BoxAttributes Line Nothing) []

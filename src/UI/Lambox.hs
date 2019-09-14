@@ -126,7 +126,7 @@ splitBox Config{..} axis ratio = splitBox' configX configY configWidth configHei
 -- | Take x and y coordinates, dimensions, axis, ratio, and
 -- two attribute lists to split the area into two boxes, configuring
 -- each box to the respective attributes (top/left takes first one)
-splitBox' :: RealFrac a => Integer -> Integer -> Integer -> Integer -> BoxAttributes -> BoxAttributes -> Text -> Text -> Axis -> a -> Curses (Box,Box)
+splitBox' :: RealFrac a => Integer -> Integer -> Integer -> Integer -> BoxAttributes -> BoxAttributes -> [Content] -> [Content] -> Axis -> a -> Curses (Box,Box)
 splitBox' x y width height attrs1 attrs2 txt1 txt2 axis ratio = do
   (conf1, conf2) <- case axis of
     Vertical -> do
@@ -168,9 +168,9 @@ splitFromBox (Box Config{..} win pan) dir ratio attrs = do
       updateWindow win $ do
         resizeWindow nHeight1 configWidth -- have to redraw borders and title, to fix that bottom border bug
         moveWindow nuY1 configX
-      let nConfig = Config configX nuY2 configWidth nHeight2 attrs ""
+      let nConfig = Config configX nuY2 configWidth nHeight2 attrs []
       box2 <- newBox nConfig
-      let nbox1 = Box (Config configX nuY1 configWidth nHeight1 configAttrs "") win pan
+      let nbox1 = Box (Config configX nuY1 configWidth nHeight1 configAttrs []) win pan
       pure (nbox1,box2)
 
 -- | Delete box. Because @ncurses@ 'Window's and 'Panel's are not garbage collected, calling this at the end of a Box's lifecycle is required.
@@ -194,7 +194,7 @@ getAttributes :: Box -> BoxAttributes
 getAttributes (Box Config{..} _ _) = configAttrs
 
 -- | Get the contents of a box
-getBoxContents :: Box -> Text
+getBoxContents :: Box -> [Content]
 getBoxContents (Box Config{..} _ _) = contents
 
 
@@ -271,8 +271,8 @@ setDimension' box w h = setDimension w h box
 
 -- | Take a box and a pair of local coordinates and print a string within it
 writeStr :: Integer -> Integer -> String -> Box -> Curses Box
-writeStr x y str (Box conf win pan) = do
-  let nBox = Box (conf { contents = T.pack str }) win pan
+writeStr x y str (Box conf@Config{..} win pan) = do
+  let nBox = Box (conf { contents = contents <> [(Text x y $T.pack str)] }) win pan
   updateWindow win $
     moveCursor y x
     *> drawString str
@@ -285,7 +285,7 @@ writeStr' box x y str = writeStr x y str box
 -- | Take a box and a pair of local coordinates and print some text within it
 writeText :: Integer -> Integer -> Text -> Box -> Curses Box
 writeText x y txt (Box conf win pan) = do
-  let nBox = Box (conf { contents = txt }) win pan
+  let nBox = Box (conf { contents = [Text x y txt] }) win pan
   updateWindow win $
     moveCursor y x
     *> drawText txt
@@ -345,8 +345,11 @@ updateBox (Box Config{..} win pan) = do
               AlignBot -> configHeight-1
         moveCursor horz vert *> drawString title
     case contents of
-      ""  -> pure ()
-      txt -> pure () -- moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
+      []  -> pure ()
+      txt -> do
+        _ <- forM txt $ \(Text x y t) -> moveCursor y x *> drawText t
+        pure ()
+        --pure () -- moveCursor 1 1 *> drawText txt -- flesh out drawing so contents can wrap, and have more powerful features than just being text
 
 -- | Perform action if an event is passed and it meets the event condition, else do nothing
 onEvent :: Maybe Event -> (Event -> Bool) -> Action a -> Curses ()

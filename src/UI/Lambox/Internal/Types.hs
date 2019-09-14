@@ -1,10 +1,12 @@
+{-# language OverloadedStrings #-}
+
 -- | Types that are used in UI.Lambox. This module should not be exported, as the necessary types are re-exported through UI.Lambox.
 module UI.Lambox.Internal.Types
   ( -- * Box
     Box(..)
     -- * Configuration
   , Config(..)
-  , Contents(..)
+  , Content(..)
     -- * Attributes
   , BoxAttributes(..)
   , Title(..)
@@ -38,12 +40,12 @@ data Config = Config --WIP
   , configWidth   :: Integer
   , configHeight  :: Integer
   , configAttrs   :: BoxAttributes
-  , contents      :: Text
+  , contents      :: [Content]
   } deriving (Eq)
 
 -- | Inner 'Box' contents
-data Contents
-  = Text !Int !Int Text -- other stuff TODO
+data Content
+  = Text !Integer !Integer Text -- other stuff TODO
   deriving(Eq)
 
 -- | Stores Box attributes such as borders and title.

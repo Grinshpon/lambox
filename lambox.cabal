@@ -45,7 +45,7 @@ description:
     &#32;&#32;deleteBoxes [box1, box2]
     &#32;&#32;where
     &#32;&#32;&#32;&#32;title = Title &#34;LamBox&#34; AlignTop AlignRight
-    &#32;&#32;&#32;&#32;config = Config 2 2 22 10 (BoxAttributes Line Nothing) &#34;&#34;
+    &#32;&#32;&#32;&#32;config = Config 2 2 22 10 (BoxAttributes Line Nothing) []
   @
   .
 license:             Zlib
