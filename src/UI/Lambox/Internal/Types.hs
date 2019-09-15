@@ -46,6 +46,7 @@ data Config = Config --WIP
 -- | Inner 'Box' contents. The two numbers (x,y) represent the starting point of the text within the Box.
 data Content
   = Text !Integer !Integer Text
+  | Input !Integer !Integer !Integer !Integer Text
   deriving(Eq)
 
 -- | Stores Box attributes such as borders and title.
@@ -71,7 +72,7 @@ data Borders
   deriving (Eq)
 
 -- | Describe a custom border
-data Border = Border --WIP
+data Border = Border
   { topLeft  :: Glyph
   , topRight :: Glyph
   , botLeft  :: Glyph
